@@ -9,24 +9,35 @@ def conectar_banco():
     cursor.execute('''CREATE TABLE IF NOT EXISTS clientes (
                       id INTEGER PRIMARY KEY,
                       nome TEXT,
-                      cpf_cnpj TEXT,
+                      cep TEXT,
                       endereco TEXT,
-                      telefone TEXT
+                      cidade TEXT,
+                      estado TEXT,
+                      cpf_cnpj TEXT,
+                      telefone TEXT,
+                      ativo BOOLEAN
+                      )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS equipamento_cliente (
+                      id INTEGER PRIMARY KEY,
+                      descricao TEXT,
+                      cliente_id INTEGER,
+                      ativo BOOLEAN,
+                      FOREIGN KEY(cliente_id) REFERENCES clientes(id)
                       )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS produtos (
                       id INTEGER PRIMARY KEY,
-                      nome TEXT,
                       descricao TEXT,
-                      codigo TEXT,
-                      preco REAL
+                      valor REAL,
+                      ativo BOOLEAN
                       )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS ordens_servico (
                       id INTEGER PRIMARY KEY,
                       cliente_id INTEGER,
-                      data_inicio TEXT,
-                      data_final TEXT,
+                      data_inicio DATA,
+                      data_final DATA,
                       mao_de_obra REAL,
-                      valor_total REAL
+                      valor_total REAL,
+                      ativo BOOLEAN
                       )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS itens_ordem (
                       id INTEGER PRIMARY KEY,
@@ -43,8 +54,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sistema de Gerenciamento de Ordens de Serviço")
-        self.setGeometry(100, 100, 800, 600)
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setGeometry(0, 0, 1280, 720)
+        self.setWindowIcon(QIcon("img/logotipo.png"))
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -86,8 +97,8 @@ class ClientesWindow(QWidget):
         self.setLayout(self.layout)
 
         self.table_clientes = QTableWidget()
-        self.table_clientes.setColumnCount(5)
-        self.table_clientes.setHorizontalHeaderLabels(['ID', 'Nome', 'CPF/CNPJ', 'Endereço', 'Telefone'])
+        self.table_clientes.setColumnCount(8)
+        self.table_clientes.setHorizontalHeaderLabels(['ID', 'Nome', 'CEP', 'Endereço', 'Cidade','Estado', 'CPF/CNPJ', 'telefone'])
         self.layout.addWidget(self.table_clientes)
 
         self.btn_adicionar_cliente = QPushButton("Adicionar Cliente")
@@ -102,12 +113,16 @@ class ClientesWindow(QWidget):
         self.btn_excluir_cliente.clicked.connect(self.excluir_cliente)
         self.layout.addWidget(self.btn_excluir_cliente)
 
+        self.btn_inativar_cliente = QPushButton("Inativar Cliente")
+        self.btn_inativar_cliente.clicked.connect(self.inativar_cliente)
+        self.layout.addWidget(self.btn_inativar_cliente)
+
         self.conn, self.cursor = conectar_banco()
         self.carregar_clientes()
 
     def carregar_clientes(self):
         self.table_clientes.setRowCount(0)
-        self.cursor.execute("SELECT * FROM clientes")
+        self.cursor.execute("SELECT * FROM clientes WHERE ativo = ?", (True,))
         clientes = self.cursor.fetchall()
         for row_number, cliente in enumerate(clientes):
             self.table_clientes.insertRow(row_number)
@@ -118,10 +133,14 @@ class ClientesWindow(QWidget):
         dialog = AdicionarEditarClienteDialog()
         if dialog.exec_():
             nome = dialog.nome.text()
+            cep = dialog.cep.text()            
+            endereco = dialog.endereco.text()            
+            cidade = dialog.cidade.text()
+            estado = dialog.estado.text()
             cpf_cnpj = dialog.cpf_cnpj.text()
-            endereco = dialog.endereco.text()
             telefone = dialog.telefone.text()
-            self.cursor.execute("INSERT INTO clientes (nome, cpf_cnpj, endereco, telefone) VALUES (?, ?, ?, ?)", (nome, cpf_cnpj, endereco, telefone))
+            
+            self.cursor.execute("INSERT INTO clientes (nome, cep, endereco, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?,?, ?, ?, ?)", (nome,cep, endereco, cidade, estado, cpf_cnpj, telefone, True))
             self.conn.commit()
             self.carregar_clientes()
 
@@ -130,16 +149,22 @@ class ClientesWindow(QWidget):
         if selected_row != -1:
             id = self.table_clientes.item(selected_row, 0).text()
             nome = self.table_clientes.item(selected_row, 1).text()
-            cpf_cnpj = self.table_clientes.item(selected_row, 2).text()
+            cep = self.table_clientes.item(selected_row, 2).text()
             endereco = self.table_clientes.item(selected_row, 3).text()
-            telefone = self.table_clientes.item(selected_row, 4).text()
-            dialog = AdicionarEditarClienteDialog(nome, cpf_cnpj, endereco, telefone)
+            cidade = self.table_clientes.item(selected_row, 4).text()
+            estado = self.table_clientes.item(selected_row, 5).text()
+            cpf_cnpj = self.table_clientes.item(selected_row, 6).text()            
+            telefone = self.table_clientes.item(selected_row, 7).text()
+            dialog = AdicionarEditarClienteDialog(nome, cep, endereco, cidade, estado, cpf_cnpj,telefone)
             if dialog.exec_():
                 novo_nome = dialog.nome.text()
-                novo_cpf_cnpj = dialog.cpf_cnpj.text()
+                novo_cep = dialog.cep.text()
                 novo_endereco = dialog.endereco.text()
+                novo_cidade = dialog.cidade.text()
+                novo_estado = dialog.estado.text()
+                novo_cpf_cnpj = dialog.cpf_cnpj.text()
                 novo_telefone = dialog.telefone.text()
-                self.cursor.execute("UPDATE clientes SET nome=?, cpf_cnpj=?, endereco=?, telefone=? WHERE id=?", (novo_nome, novo_cpf_cnpj, novo_endereco, novo_telefone, id))
+                self.cursor.execute("UPDATE clientes SET nome=?, cep=?, endereco=?, cidade=?, estado=?, cpf_cnpj=?,telefone=? WHERE id=?", (novo_nome, novo_cep, novo_endereco, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone, id))
                 self.conn.commit()
                 self.carregar_clientes()
         else:
@@ -156,9 +181,21 @@ class ClientesWindow(QWidget):
                 self.carregar_clientes()
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")
+    
+    def inativar_cliente(self):
+        selected_row = self.table_clientes.currentRow()
+        if selected_row != -1:
+            id = self.table_clientes.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o cliente código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.cursor.execute("UPDATE clientes SET ativo=? WHERE id=?", (False, id))
+                self.conn.commit()
+                self.carregar_clientes()
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")    
 
 class AdicionarEditarClienteDialog(QDialog):
-    def __init__(self, nome="", cpf_cnpj="", endereco="", telefone=""):
+    def __init__(self, nome="",cep="",endereco="",cidade="",estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar/Editar Cliente")
 
@@ -168,13 +205,25 @@ class AdicionarEditarClienteDialog(QDialog):
         self.nome.setPlaceholderText("Nome")
         layout.addWidget(self.nome)
 
-        self.cpf_cnpj = QLineEdit(cpf_cnpj)
-        self.cpf_cnpj.setPlaceholderText("CPF/CNPJ")
-        layout.addWidget(self.cpf_cnpj)
-
+        self.cep = QLineEdit(cep)
+        self.cep.setPlaceholderText("CEP")
+        layout.addWidget(self.cep)
+        
         self.endereco = QLineEdit(endereco)
         self.endereco.setPlaceholderText("Endereço")
         layout.addWidget(self.endereco)
+
+        self.cidade = QLineEdit(cidade)
+        self.cidade.setPlaceholderText("Cidade")
+        layout.addWidget(self.cidade)
+
+        self.estado = QLineEdit(estado)
+        self.estado.setPlaceholderText("Estado")
+        layout.addWidget(self.estado)
+
+        self.cpf_cnpj = QLineEdit(cpf_cnpj)
+        self.cpf_cnpj.setPlaceholderText("CPF/CNPJ")
+        layout.addWidget(self.cpf_cnpj);        
 
         self.telefone = QLineEdit(telefone)
         self.telefone.setPlaceholderText("Telefone")
