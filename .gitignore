@@ -146,6 +146,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# ignore all Db
+*.db
+*.db-journal
+
 # pytype static type analyzer
 .pytype/
 
