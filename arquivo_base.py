@@ -117,12 +117,42 @@ class ClientesWindow(QWidget):
         self.btn_inativar_cliente.clicked.connect(self.inativar_cliente)
         self.layout.addWidget(self.btn_inativar_cliente)
 
+        self.btn_carregar_todos_clientes = QPushButton("Carregar Todos Cliente")
+        self.btn_carregar_todos_clientes.clicked.connect(self.carregar_todos_clientes)
+        self.layout.addWidget(self.btn_carregar_todos_clientes)
+       
+        self.btn_carregar_clientes_ativos = QPushButton("Filtrar clientes ativos")
+        self.btn_carregar_clientes_ativos.clicked.connect(self.carregar_clientes)
+        self.layout.addWidget(self.btn_carregar_clientes_ativos)
+
+        self.btn_carregar_clientes_inativos = QPushButton("Filtrar clientes inativos")
+        self.btn_carregar_clientes_inativos.clicked.connect(self.carregar_clientes_inativos)
+        self.layout.addWidget(self.btn_carregar_clientes_inativos)
+
         self.conn, self.cursor = conectar_banco()
         self.carregar_clientes()
 
     def carregar_clientes(self):
         self.table_clientes.setRowCount(0)
         self.cursor.execute("SELECT * FROM clientes WHERE ativo = ?", (True,))
+        clientes = self.cursor.fetchall()
+        for row_number, cliente in enumerate(clientes):
+            self.table_clientes.insertRow(row_number)
+            for column_number, data in enumerate(cliente):
+                self.table_clientes.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+
+    def carregar_todos_clientes(self):
+        self.table_clientes.setRowCount(0)
+        self.cursor.execute("SELECT * FROM clientes")
+        clientes = self.cursor.fetchall()
+        for row_number, cliente in enumerate(clientes):
+            self.table_clientes.insertRow(row_number)
+            for column_number, data in enumerate(cliente):
+                self.table_clientes.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+            
+    def carregar_clientes_inativos(self):
+        self.table_clientes.setRowCount(0)
+        self.cursor.execute("SELECT * FROM clientes WHERE ativo = ?", (False,))
         clientes = self.cursor.fetchall()
         for row_number, cliente in enumerate(clientes):
             self.table_clientes.insertRow(row_number)
