@@ -2,7 +2,60 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget, QDialog, QMessageBox, QComboBox, QTableWidgetItem, QTableWidget
 from PyQt5.QtGui import QIcon, QFont
 import sqlite3
+import bcrypt
 
+# Função para verificar o login
+def verificar_login(username, password):
+    conn = sqlite3.connect('gerenciamento_ordens_servico.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS usuario (
+                      username TEXT PRIMARY KEY,
+                      password TEXT,
+                      tipo_usuario TEXT,
+                      ativo BOOLEAN
+                      )''')
+    cursor.execute("SELECT * FROM usuario WHERE username=?", (username,))
+    user_data = cursor.fetchone()
+    conn.close()
+    if user_data:
+        hashed_password = user_data[1]
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_password):
+            return user_data[2]  # Retorna o tipo de usuário (admin ou normal)
+    return None
+
+class LoginWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Login")
+        self.setGeometry(300, 300, 300, 150)
+
+        layout = QVBoxLayout()
+
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Usuário")
+        layout.addWidget(self.username_input)
+
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("Senha")
+        self.password_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(self.password_input)
+
+        btn_login = QPushButton("Login")
+        btn_login.clicked.connect(self.efetuar_login)
+        layout.addWidget(btn_login)
+
+        self.setLayout(layout)
+
+    def efetuar_login(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+        user_type = verificar_login(username, password)
+        if user_type:
+            self.user_type = user_type
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Aviso", "Credenciais inválidas!")
+    
 def conectar_banco():
     conn = sqlite3.connect('gerenciamento_ordens_servico.db')
     cursor = conn.cursor()
@@ -51,7 +104,7 @@ def conectar_banco():
     return conn, cursor
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, user_type):
         super().__init__()
         self.setWindowTitle("Sistema de Gerenciamento de Ordens de Serviço")
         self.setGeometry(0, 0, 1280, 720)
@@ -74,6 +127,17 @@ class MainWindow(QMainWindow):
         self.btn_ordens_servico = QPushButton("Gerenciar Ordens de Serviço")
         self.btn_ordens_servico.clicked.connect(self.abrir_janela_ordens_servico)
         self.layout.addWidget(self.btn_ordens_servico)
+
+        if user_type == 'adm':
+            self.btn_produtos = QPushButton("Gerenciar Produtos ADM")
+            self.btn_produtos.clicked.connect(self.abrir_janela_produtos)
+            self.layout.addWidget(self.btn_produtos)
+
+            self.btn_ordens_servico = QPushButton("Gerenciar Ordens de Serviço")
+            self.btn_ordens_servico.clicked.connect(self.abrir_janela_ordens_servico)
+            self.layout.addWidget(self.btn_ordens_servico)
+    
+  
 
     def abrir_janela_clientes(self):
         self.clientes_window = ClientesWindow()
@@ -468,7 +532,7 @@ class OrdensServicoWindow(QWidget):
 
     def carregar_ordens_servico(self):
         self.table_ordens_servico.setRowCount(0)
-        self.cursor.execute("SELECT ordens_servico.id, clientes.nome, ordens_servico.data_inicio, ordens_servico.data_final, ordens_servico.mao_de_obra, ordens_servico.valor_total FROM ordens_servico JOIN clientes ON ordens_servico.cliente_id = clientes.id")
+        self.cursor.execute("SELECT ordens_servico.id, cliente.nome, ordens_servico.data_inicio, ordens_servico.data_final, ordens_servico.mao_de_obra, ordens_servico.valor_total FROM ordens_servico JOIN cliente ON ordens_servico.cliente_id = cliente.id")
         ordens_servico = self.cursor.fetchall()
         for row_number, ordem_servico in enumerate(ordens_servico):
             self.table_ordens_servico.insertRow(row_number)
@@ -513,7 +577,7 @@ class AdicionarEditarOrdemServicoDialog(QDialog):
 
         self.combo_clientes = QComboBox()
         self.combo_clientes.addItem("Selecione um cliente")
-        self.cursor.execute("SELECT id, nome FROM clientes")
+        self.cursor.execute("SELECT id, nome FROM cliente")
         clientes = self.cursor.fetchall()
         for cliente in clientes:
             self.combo_clientes.addItem(f"{cliente[0]} - {cliente[1]}")
@@ -557,7 +621,7 @@ class AdicionarEditarOrdemServicoDialog(QDialog):
         self.data_final.setText(ordem_servico[4])
         self.mao_de_obra.setText(str(ordem_servico[5]))
 
-        self.cursor.execute("SELECT produtos.nome, itens_ordem.quantidade, produtos.preco FROM itens_ordem JOIN produtos ON itens_ordem.produto_id = produtos.id WHERE itens_ordem.ordem_id=?", (id,))
+        self.cursor.execute("SELECT produto.nome, itens_ordem.quantidade, produto.preco FROM itens_ordem JOIN produto ON itens_ordem.produto_id = produto.id WHERE itens_ordem.ordem_id=?", (id,))
         itens_ordem = self.cursor.fetchall()
         self.table_itens_ordem.setRowCount(0)
         for row_number, item in enumerate(itens_ordem):
@@ -606,7 +670,7 @@ class AdicionarItemDialog(QDialog):
 
         self.combo_produtos = QComboBox()
         self.combo_produtos.addItem("Selecione um produto")
-        cursor.execute("SELECT nome FROM produtos")
+        cursor.execute("SELECT nome FROM produto")
         produtos = cursor.fetchall()
         for produto in produtos:
             self.combo_produtos.addItem(produto[0])
@@ -628,6 +692,9 @@ class AdicionarItemDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+    login_window = LoginWindow()
+    if login_window.exec_() == QDialog.Accepted:
+        user_type = login_window.user_type
+        window = MainWindow(user_type)
+        window.show()
+        sys.exit(app.exec_())
