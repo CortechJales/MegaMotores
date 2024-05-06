@@ -1,30 +1,17 @@
-from PyQt5.QtWidgets import QWidget, QDialog, QMessageBox,QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from database.database import Database
+from cliente.cliente_controller import ClienteController
+
+from cliente.equipamento_cliente_controller import EquipamentoClienteController
 
 class ClienteUI(QWidget):
     def __init__(self):
         super().__init__()
-        self.db = Database('database/gerenciamento_ordens_servico.db')  # Conectar ao banco de dados
-        self.create_table()
+        self.controller = ClienteController()
+        
+        self.controller_equipamento = EquipamentoClienteController()
         self.initUI()
-    
-    def create_table(self):
-        sql = '''
-        CREATE TABLE IF NOT EXISTS cliente (
-        id INTEGER PRIMARY KEY,
-        nome TEXT,
-        cep TEXT,
-        endereco TEXT,
-        cidade TEXT,
-        estado TEXT,
-        cpf_cnpj TEXT,
-        telefone TEXT,
-        ativo BOOLEAN
-        )
-        '''
-        self.db.create_table(sql)
 
     def initUI(self):
         # Layout principal
@@ -84,7 +71,14 @@ class ClienteUI(QWidget):
         action_ative.triggered.connect(self.ative_cliente)
 
         self.setLayout(layout)
+        
+        self.controller.create_table()       
+        self.controller_equipamento.create_table()
         self.filter_active()
+
+        # Adicionar evento de clique duplo na tabela de clientes
+        self.client_table.doubleClicked.connect(self.show_cliente_details)
+        
 
     def filter_table(self):
         filter_text = self.filter_input.text().lower()
@@ -98,8 +92,7 @@ class ClienteUI(QWidget):
             self.client_table.setRowHidden(row, not match)
 
     def filter_all(self):
-        query = 'SELECT * FROM cliente'
-        clientes = self.db.execute_query(query)
+        clientes = self.controller.ListarCliente()
         self.client_table.setRowCount(0)
     
         for row_number, cliente in enumerate(clientes):
@@ -122,9 +115,7 @@ class ClienteUI(QWidget):
                     self.client_table.setItem(row_number, column_number, item)
 
     def filter_active(self):
-        query = 'SELECT * FROM cliente where ativo=?'
-        data = (True,)
-        clientes = self.db.execute_query(query, data)
+        clientes = self.controller.FiltrarCliente(True)
         self.client_table.setRowCount(0)
     
         for row_number, cliente in enumerate(clientes):
@@ -147,9 +138,7 @@ class ClienteUI(QWidget):
                     self.client_table.setItem(row_number, column_number, item)
 
     def filter_inactive(self):
-        query = 'SELECT * FROM cliente where ativo=?'
-        data = (False,)
-        clientes = self.db.execute_query(query, data)
+        clientes = self.controller.FiltrarCliente(False)
         self.client_table.setRowCount(0)
     
         for row_number, cliente in enumerate(clientes):
@@ -171,22 +160,26 @@ class ClienteUI(QWidget):
                 else:
                     self.client_table.setItem(row_number, column_number, item)
 
-
     def add_cliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone):
-        query = 'INSERT INTO cliente (nome, cep, endereco, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?,?, ?, ?, ?)'
-        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, True)
-        self.db.execute_query_no_return(query, data)
-        self.filter_active()  # Atualizar a tabela após adicionar cliente
+        self.controller.CadastrarCliente( nome, cep, endereco, cidade, estado, cpf_cnpj, telefone)
+        self.filter_active()  # Atualizar a tabela após adicionar clientes
 
     def edit_cliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, id):
-        query = 'UPDATE cliente SET nome=?, cep=?, endereco=?, cidade=?, estado=?, cpf_cnpj=?, telefone=? WHERE id=?'
-        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, id)
-        self.db.execute_query_no_return(query, data)
-        self.filter_active()
+        self.controller.EditarCliente( nome, cep, endereco, cidade, estado, cpf_cnpj, telefone,id)
+        self.filter_active()  # Atualizar a tabela após adicionar clientes
 
-    def delete_cliente(self):
-        # Implemente a lógica para excluir um cliente selecionado na tabela
-        pass
+
+    def delete_cliente(self,id):
+      
+        selected_row = self.client_table.currentRow()
+        if selected_row != -1:
+            id = self.client_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o cliente ID {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.controller.DeletarCliente(id)
+                self.filter_active()
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")
 
     def inactive_cliente(self):
         selected_row = self.client_table.currentRow()
@@ -194,49 +187,37 @@ class ClienteUI(QWidget):
             id = self.client_table.item(selected_row, 0).text()
             resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o cliente código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
-                query = 'SELECT ativo FROM cliente WHERE id=?'
-                data = (id,)
-                resultado = self.db.execute_query(query, data)
+                resultado = self.controller.ValidarCliente(id)
                 if resultado:
                     estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
                     if estado_cliente == 1:  # Verifica se o cliente está ativo
-                        query = 'UPDATE cliente SET ativo=? WHERE id=?'
-                        data = (0, id)
-                        self.db.execute_query_no_return(query, data)
-                        self.filter_inactive()
+                        self.controller.InativarCliente(id)
+                        self.filter_all()
                     else:
                         QMessageBox.warning(self, "Aviso", "Cliente já está inativo.")
                 else:
                     QMessageBox.warning(self, "Aviso", "Cliente não encontrado.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para inativar.")
-    
-    
+ 
     def ative_cliente(self):
         selected_row = self.client_table.currentRow()
         if selected_row != -1:
             id = self.client_table.item(selected_row, 0).text()
             resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar o cliente código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
-                query = 'SELECT ativo FROM cliente WHERE id=?'
-                data = (id)
-                resultado=self.db.execute_query(query, data)
+                resultado = self.controller.ValidarCliente(id)
                 if resultado:
                     estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
-                    if estado_cliente == 0:  # Verifica se o cliente está ativo
-                        query = 'UPDATE cliente SET ativo=? WHERE id=?'
-                        data = (1, id)
-                        self.db.execute_query_no_return(query, data)
-                        self.filter_active()
+                    if estado_cliente == 0:  # Verifica se o cliente está inativo
+                        self.controller.AtivarCliente(id)
+                        self.filter_all()
                     else:
                         QMessageBox.warning(self, "Aviso", "Cliente já está Ativo.")
                 else:
                     QMessageBox.warning(self, "Aviso", "Cliente não encontrado.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para Ativar.")   
-
-    
-           
 
     def show_add_cliente_dialog(self):
         dialog = AdicionarEditarClienteDialog()
@@ -274,6 +255,27 @@ class ClienteUI(QWidget):
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para editar.")
 
+    def show_cliente_details(self):
+        selected_row = self.client_table.currentRow()
+        if selected_row != -1:
+           
+            cliente_info = {
+            'nome': self.client_table.item(selected_row, 1).text(),
+            'cep': self.client_table.item(selected_row, 2).text(),
+            'endereco': self.client_table.item(selected_row, 3).text(),
+            'cidade': self.client_table.item(selected_row, 4).text(),
+            'estado': self.client_table.item(selected_row, 5).text(),
+            'cpf_cnpj': self.client_table.item(selected_row, 6).text(),
+            'telefone': self.client_table.item(selected_row, 7).text()
+        }
+            cliente_id = self.client_table.item(selected_row, 0).text()  
+            equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+
+            dialog = DetalhesClienteDialog(cliente_info, equipamentos)
+            dialog.exec_()
+
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
 
 class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", cidade="", estado="", cpf_cnpj="", telefone=""):
@@ -315,11 +317,48 @@ class AdicionarEditarClienteDialog(QDialog):
         layout.addWidget(btn_salvar)
 
         self.setLayout(layout)
+class DetalhesClienteDialog(QDialog):
+    def __init__(self, cliente_info, equipamentos):
+        super().__init__()
+
+        self.setWindowTitle("Detalhes do Cliente")
+        layout = QVBoxLayout()
+
+        form_layout = QFormLayout()
+        for key, value in cliente_info.items():
+            label = QLabel(key.capitalize() + ":")
+            field = QLabel(str(value))  # Criando um QLabel para o valor correspondente
+            form_layout.addRow(label, field)
+
+        layout.addLayout(form_layout)
+
+        equip_label = QLabel("Equipamentos:")
+        layout.addWidget(equip_label)
+
+        self.equip_table = QTableWidget()
+        self.equip_table.setColumnCount(2)
+        self.equip_table.setHorizontalHeaderLabels(['Descrição', 'Ativo'])
+        self.equip_table.setRowCount(len(equipamentos))
+
+        for row, equip in enumerate(equipamentos):
+            descricao_item = QTableWidgetItem(equip['descricao'])
+            ativo_item = QTableWidgetItem("Sim" if equip['ativo'] else "Não")
+            self.equip_table.setItem(row, 0, descricao_item)
+            self.equip_table.setItem(row, 1, ativo_item)
+
+        layout.addWidget(self.equip_table)
+
+        self.setLayout(layout)
+
+    def load_equip_table(self):
+        pass
+
+   
+
 
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    ui = ClienteUI()
-    ui.carregar_clientes()  # Carregar clientes ao iniciar a aplicação
+    ui = ClienteUI()  
     ui.show()
     sys.exit(app.exec_())

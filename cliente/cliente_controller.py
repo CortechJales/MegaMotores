@@ -1,34 +1,65 @@
-from cliente import Cliente
-
+from database.database import Database
 class ClienteController:
     def __init__(self):
-        self.clientes = []
+        self.db = Database('database/gerenciamento_ordens_servico.db')    
+    
+    def create_table(self):
+        sql = '''
+        CREATE TABLE IF NOT EXISTS cliente (
+        id INTEGER PRIMARY KEY,
+        nome TEXT,
+        cep TEXT,
+        endereco TEXT,
+        cidade TEXT,
+        estado TEXT,
+        cpf_cnpj TEXT,
+        telefone TEXT,
+        ativo BOOLEAN
+        )
+        '''
+        self.db.create_table(sql)
+    def ListarCliente(self):
+        query = 'SELECT * FROM cliente'
+        return self.db.execute_query(query)
+    
+    def CarregarCliente(self, id):
+        query = 'SELECT * FROM cliente where id=?'
+        data = (id,)
+        return self.db.execute_query(query,data)
+    
+    def FiltrarCliente(self,tipo):
+        query = 'SELECT * FROM cliente where ativo=?'
+        data = (tipo,)
+        return self.db.execute_query(query,data)
+    
+    def CadastrarCliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone):
+        query = 'INSERT INTO cliente (nome, cep, endereco, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?,?, ?, ?, ?)'
+        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, True)
+        self.db.execute_query_no_return(query, data)
+    
+    def EditarCliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone,id):    
+        query = 'UPDATE cliente SET nome=?, cep=?, endereco=?, cidade=?, estado=?, cpf_cnpj=?, telefone=? WHERE id=?'
+        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, id)
+        self.db.execute_query_no_return(query, data)
+    
+    def DeletarCliente(self, id):    
+        query = 'DELETE FROM cliente WHERE id=?'
+        data = (id,)
+        self.db.execute_query_no_return(query, data)
+    
+    def InativarCliente(self,id):
+        query = 'UPDATE cliente SET ativo=? WHERE id=?'
+        data = (0, id)
+        self.db.execute_query_no_return(query, data)
 
-    def adicionar_cliente(self, cliente):
-        self.clientes.append(cliente)
-
-    def editar_cliente(self, id, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone):
-        for cliente in self.clientes:
-            if cliente.id == id:
-                cliente.nome = nome
-                cliente.cep = cep
-                cliente.endereco = endereco
-                cliente.cidade = cidade
-                cliente.estado = estado
-                cliente.cpf_cnpj = cpf_cnpj
-                cliente.telefone = telefone
-                break
-
-    def excluir_cliente(self, id):
-        self.clientes = [cliente for cliente in self.clientes if cliente.id != id]
-
-    def buscar_cliente_por_id(self, id):
-        for cliente in self.clientes:
-            if cliente.id == id:
-                return cliente
-
-    def carregar_clientes(self):
-        # Aqui você carrega os clientes do banco de dados para a lista self.clientes
-        # Por exemplo:
-        # self.clientes = [Cliente(1, "Cliente A", ...), Cliente(2, "Cliente B", ...)]
-        pass
+    def AtivarCliente(self,id):
+        query = 'UPDATE cliente SET ativo=? WHERE id=?'
+        data = (1, id)
+        self.db.execute_query_no_return(query, data)
+    
+    def ValidarCliente(self,id):
+        query = 'SELECT ativo FROM cliente WHERE id=?'
+        data = (id,)
+        return self.db.execute_query(query, data)
+    
+        
