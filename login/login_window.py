@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLineEdit, QPushButton, QMessageBox
 from database.database import Database
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtGui import QIcon
+
 import bcrypt
 import sys
 
@@ -9,6 +11,7 @@ class LoginWindow(QDialog):
         super().__init__()
         self.setWindowTitle("Login")
         self.setGeometry(300, 300, 300, 150)
+        self.setWindowIcon(QIcon("img/logotipo.png"))
         self.db = Database('database/gerenciamento_ordens_servico.db')  # Conectar ao banco de dados
         self.create_table()  # Criar a tabela se não existir
        
@@ -29,6 +32,7 @@ class LoginWindow(QDialog):
         layout.addWidget(btn_login)
 
         self.setLayout(layout)
+        self.center_on_screen()
 
     login_successful = pyqtSignal()
     
@@ -65,7 +69,18 @@ class LoginWindow(QDialog):
             if bcrypt.checkpw(password.encode('utf-8'), hashed_password):
                 return user_data[0][2]  # Retorna o tipo de usuário (admin ou normal) da primeira linha
         return None
+    def center_on_screen(self):
+        # Obter a geometria da tela primária
+        screen_geometry = QApplication.primaryScreen().geometry()
 
+        # Obter a geometria da janela de login
+        window_geometry = self.frameGeometry()
+
+        # Definir a posição da janela de login para o centro da tela
+        window_geometry.moveCenter(screen_geometry.center())
+
+        # Aplicar a nova posição da janela de login
+        self.move(window_geometry.topLeft())
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     login_window = LoginWindow()

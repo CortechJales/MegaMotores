@@ -15,6 +15,13 @@ class Database:
         else:
             self.cursor.execute(query)
         return self.cursor.fetchall()
+    
+    def execute_query_no_return(self, query, data=None):
+        if data:
+         self.cursor.execute(query, data)
+        else:
+            self.cursor.execute(query)
+        self.connection.commit()  # Certifica-se de que a transação seja commitada no banco de dados
 
     def fetch_query(self, query):
         self.cursor.execute(query)

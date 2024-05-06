@@ -12,6 +12,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Sistema de Gerenciamento")
         self.setGeometry(100, 100, 800, 600)
+        self.setWindowIcon(QIcon("img/logotipo.png"))
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
@@ -25,11 +26,25 @@ class MainWindow(QMainWindow):
         self.central_widget.addWidget(self.ordem_de_servico_ui)
 
         self.create_toolbar()
+        self.center_on_screen()
+        
+    def center_on_screen(self):
+        # Obter a geometria da tela primária
+        screen_geometry = QApplication.primaryScreen().geometry()
+
+        # Obter a geometria da janela de login
+        window_geometry = self.frameGeometry()
+
+        # Definir a posição da janela de login para o centro da tela
+        window_geometry.moveCenter(screen_geometry.center())
+
+        # Aplicar a nova posição da janela de login
+        self.move(window_geometry.topLeft())
 
     def create_toolbar(self):
         toolbar = self.addToolBar("Toolbar")
 
-        cliente_action = QAction(QIcon("img/logomarca.png"),"Clientes", self)
+        cliente_action = QAction("Clientes", self)
         cliente_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cliente_ui))
 
         produto_action = QAction("Produtos", self)
