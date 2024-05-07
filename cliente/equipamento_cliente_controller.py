@@ -15,10 +15,10 @@ class EquipamentoClienteController:
         '''
         self.db.create_table(sql)
     def ListarEquipamentoCliente(self, cliente_id):
-        query = "SELECT descricao, ativo FROM equipamento_cliente WHERE cliente_id = ?"
+        query = "SELECT descricao FROM equipamento_cliente WHERE cliente_id = ?"
         data = (cliente_id,)
         result = self.db.execute_query(query, data)
-        equipamentos = [{'descricao': row[0], 'ativo': bool(row[1])} for row in result]
+        equipamentos = [{'descricao': row[0]} for row in result]
         return equipamentos
     
     def CarregarEquipamentoCliente(self, id):

@@ -260,6 +260,7 @@ class ClienteUI(QWidget):
         if selected_row != -1:
            
             cliente_info = {
+            'Código': self.client_table.item(selected_row, 0).text(),   
             'nome': self.client_table.item(selected_row, 1).text(),
             'cep': self.client_table.item(selected_row, 2).text(),
             'endereco': self.client_table.item(selected_row, 3).text(),
@@ -276,7 +277,7 @@ class ClienteUI(QWidget):
 
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
-
+    
 class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
@@ -318,8 +319,11 @@ class AdicionarEditarClienteDialog(QDialog):
 
         self.setLayout(layout)
 class DetalhesClienteDialog(QDialog):
-    def __init__(self, cliente_info, equipamentos):
+    def __init__(self,cliente_info, equipamentos):
         super().__init__()
+        
+        self.controller_equipamento = EquipamentoClienteController()
+        self.cliente_info = cliente_info
 
         self.setWindowTitle("Detalhes do Cliente")
         layout = QVBoxLayout()
@@ -336,24 +340,88 @@ class DetalhesClienteDialog(QDialog):
         layout.addWidget(equip_label)
 
         self.equip_table = QTableWidget()
-        self.equip_table.setColumnCount(2)
-        self.equip_table.setHorizontalHeaderLabels(['Descrição', 'Ativo'])
+        self.equip_table.setColumnCount(1)
+        self.equip_table.setHorizontalHeaderLabels(['Descrição'])
+        self.equip_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.equip_table.setRowCount(len(equipamentos))
 
         for row, equip in enumerate(equipamentos):
             descricao_item = QTableWidgetItem(equip['descricao'])
-            ativo_item = QTableWidgetItem("Sim" if equip['ativo'] else "Não")
             self.equip_table.setItem(row, 0, descricao_item)
-            self.equip_table.setItem(row, 1, ativo_item)
 
         layout.addWidget(self.equip_table)
 
+        
+        # Barra de ferramentas com botões de ação para os equipamentos
+        equip_toolbar = QToolBar("Barra de Ferramentas")
+        
+        # Criando um layout horizontal para centralizar o botão
+        h_layout = QHBoxLayout()
+        h_layout.addStretch()  # Adiciona um espaço elástico à esquerda do botão
+        
+        # Botões de ação para os equipamentos
+        action_add_equip = QAction("Adicionar Equipamento", self)
+        equip_toolbar.addAction(action_add_equip)
+        
+        h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
+        h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
+
+        # Configurar conexões de sinais e slots para os botões dos equipamentos
+        action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
+
+        layout.addLayout(h_layout)  # Adiciona o layout horizontal ao layout vertical principal
+
         self.setLayout(layout)
 
-    def load_equip_table(self):
-        pass
-
+    # Métodos para manipulação de equipamentos...
+    
+    def add_equipamento(self,descricao):
+       # Adiciona o novo equipamento à lista de equipamentos
+       
+        cliente_id = self.cliente_info['Código']
+        
+        # Obtém o ID do cliente
+        self.controller_equipamento.CadastrarEquipamentoCliente(descricao,cliente_id)
+        self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+        # Atualiza a tabela de equipamentos
+        self.update_equip_table()
    
+
+        
+    def update_equip_table(self):
+        # Limpa a tabela de equipamentos
+        self.equip_table.setRowCount(0)
+
+        # Adiciona os equipamentos atualizados à tabela
+        for row, equip in enumerate(self.equipamentos):
+            descricao_item = QTableWidgetItem(equip['descricao'])
+            self.equip_table.insertRow(row)
+            self.equip_table.setItem(row, 0, descricao_item)
+    
+    def show_add_equipamento_dialog(self):
+        dialog = AdicionarEditarEquipamentoDialog()
+        if dialog.exec_():
+            descricao = dialog.descricao.text()
+            self.add_equipamento(descricao)
+   
+    
+       
+class AdicionarEditarEquipamentoDialog(QDialog):
+    def __init__(self, descricao=""):
+        super().__init__()
+        self.setWindowTitle("Adicionar Equipamento")
+
+        layout = QVBoxLayout()
+
+        self.descricao = QLineEdit(descricao)
+        self.descricao.setPlaceholderText("Descrição")
+        layout.addWidget(self.descricao)
+
+        btn_salvar = QPushButton("Salvar")
+        btn_salvar.clicked.connect(self.accept)
+        layout.addWidget(btn_salvar)
+
+        self.setLayout(layout)  
 
 
 if __name__ == "__main__":
