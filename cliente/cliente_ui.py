@@ -297,6 +297,7 @@ class ClienteUI(QWidget):
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
     
+
 class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
@@ -304,6 +305,7 @@ class AdicionarEditarClienteDialog(QDialog):
         self.setWindowIcon(QIcon("icon.png"))  # Adicione o ícone desejado
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)  # Adicione margens para espaçamento
 
         form_layout = QFormLayout()
 
@@ -314,6 +316,26 @@ class AdicionarEditarClienteDialog(QDialog):
         self.estado = QLineEdit(estado)
         self.cpf_cnpj = QLineEdit(cpf_cnpj)
         self.telefone = QLineEdit(telefone)
+
+        # Estilo CSS para os campos de entrada
+        style_sheet = """
+            QLineEdit {
+                border: 2px solid #3498db;
+                border-radius: 10px;
+                padding: 8px;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #e74c3c;
+            }
+        """
+        self.nome.setStyleSheet(style_sheet)
+        self.cep.setStyleSheet(style_sheet)
+        self.endereco.setStyleSheet(style_sheet)
+        self.cidade.setStyleSheet(style_sheet)
+        self.estado.setStyleSheet(style_sheet)
+        self.cpf_cnpj.setStyleSheet(style_sheet)
+        self.telefone.setStyleSheet(style_sheet)
 
         form_layout.addRow(QLabel("Nome:"), self.nome)
         form_layout.addRow(QLabel("CEP:"), self.cep)
@@ -329,6 +351,8 @@ class AdicionarEditarClienteDialog(QDialog):
         button_layout = QHBoxLayout()
         btn_salvar = QPushButton("Salvar")
         btn_cancelar = QPushButton("Cancelar")
+        btn_salvar.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px; padding: 10px;")
+        btn_cancelar.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         btn_salvar.clicked.connect(self.accept)
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
@@ -338,20 +362,30 @@ class AdicionarEditarClienteDialog(QDialog):
 
         self.setLayout(layout)
 class DetalhesClienteDialog(QDialog):
-    def __init__(self, cliente_info, equipamentos,user_type):
+    def __init__(self, cliente_info, equipamentos, user_type):
         super().__init__()
-        
-        self.controller_equipamento = EquipamentoClienteController()
+
         self.cliente_info = cliente_info
+        self.equipamentos = equipamentos
         self.user_type = user_type
+        self.controller_equipamento = EquipamentoClienteController()  # Adicionando o atributo controller_equipamento
 
         self.setWindowTitle("Detalhes do Cliente")
+        self.setWindowIcon(QIcon("icon.png"))
+
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
 
         form_layout = QFormLayout()
+
+        self.campos_cliente = {}
+
         for key, value in cliente_info.items():
             label = QLabel(key.capitalize() + ":")
-            field = QLabel(str(value))  # Criando um QLabel para o valor correspondente
+            field = QLineEdit(str(value))
+            field.setReadOnly(True)
+            field.setStyleSheet("background-color: white; border: 2px solid #3498db; padding: 5px; border-radius: 5px;")
+            self.campos_cliente[key] = field
             form_layout.addRow(label, field)
 
         layout.addLayout(form_layout)
@@ -373,62 +407,50 @@ class DetalhesClienteDialog(QDialog):
 
         layout.addWidget(self.equip_table)
 
-        self.setLayout(layout)
-
-        
         # Barra de ferramentas com botões de ação para os equipamentos
         equip_toolbar = QToolBar("Barra de Ferramentas")
-        
-        # Criando um layout horizontal para centralizar o botão
-        h_layout = QHBoxLayout()
-        h_layout.addStretch()  # Adiciona um espaço elástico à esquerda do botão
-        
+        equip_toolbar.setStyleSheet("background-color: #ecf0f1; padding: 10px; border-radius: 10px;")
+
         if self.user_type == 'adm':
-        # Botões de ação para os equipamentos
+            # Botões de ação para os equipamentos
             action_add_equip = QAction("Adicionar", self)
             action_edit_equip = QAction("Editar", self)
             action_delete_equip = QAction("Excluir", self)
             action_inactive_equip = QAction("Inativar", self)
             action_ative_equip = QAction("Reativar", self)
 
-        
             equip_toolbar.addAction(action_add_equip)
             equip_toolbar.addAction(action_edit_equip)
             equip_toolbar.addAction(action_delete_equip)
             equip_toolbar.addAction(action_inactive_equip)
             equip_toolbar.addAction(action_ative_equip)
-        
-            h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
-            h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
 
-        # Configurar conexões de sinais e slots para os botões dos equipamentos
+            # Configurar conexões de sinais e slots para os botões dos equipamentos
             action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
             action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
             action_delete_equip.triggered.connect(self.delete_equipamento)
             action_inactive_equip.triggered.connect(self.inactive_equipamento)
             action_ative_equip.triggered.connect(self.ative_equipamento)
-        if self.user_type == 'usr':
-        # Botões de ação para os equipamentos
+
+        elif self.user_type == 'usr':
+            # Botões de ação para os equipamentos
             action_add_equip = QAction("Adicionar", self)
             action_edit_equip = QAction("Editar", self)
             action_inactive_equip = QAction("Inativar", self)
 
-        
             equip_toolbar.addAction(action_add_equip)
             equip_toolbar.addAction(action_edit_equip)
             equip_toolbar.addAction(action_inactive_equip)
-        
-            h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
-            h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
 
-        # Configurar conexões de sinais e slots para os botões dos equipamentos
+            # Configurar conexões de sinais e slots para os botões dos equipamentos
             action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
             action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
             action_inactive_equip.triggered.connect(self.inactive_equipamento)
-            
-        layout.addLayout(h_layout)  # Adiciona o layout horizontal ao layout vertical principal
+
+        layout.addWidget(equip_toolbar)
 
         self.setLayout(layout)
+
 
     # Métodos para manipulação de equipamentos...
     
@@ -547,19 +569,45 @@ class AdicionarEditarEquipamentoDialog(QDialog):
     def __init__(self, descricao=""):
         super().__init__()
         self.setWindowTitle("Adicionar Equipamento")
+        self.setWindowIcon(QIcon("icon.png"))
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
 
+        form_layout = QFormLayout()
+
+        
         self.descricao = QLineEdit(descricao)
-        self.descricao.setPlaceholderText("Descrição")
-        layout.addWidget(self.descricao)
 
+        style_sheet = """
+            QLineEdit {
+                border: 2px solid #3498db;
+                border-radius: 10px;
+                padding: 8px;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #e74c3c;
+            }
+        """
+        self.descricao.setStyleSheet(style_sheet)
+        form_layout.addRow(QLabel("Descrição:"), self.descricao)
+
+        layout.addLayout(form_layout)
+
+        button_layout = QHBoxLayout()
         btn_salvar = QPushButton("Salvar")
+        btn_cancelar = QPushButton("Cancelar")
+        btn_salvar.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px; padding: 10px;")
+        btn_cancelar.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         btn_salvar.clicked.connect(self.accept)
-        layout.addWidget(btn_salvar)
+        btn_cancelar.clicked.connect(self.reject)
+        button_layout.addWidget(btn_salvar)
+        button_layout.addWidget(btn_cancelar)
 
-        self.setLayout(layout)  
+        layout.addLayout(button_layout)
 
+        self.setLayout(layout)
 
 if __name__ == "__main__":
     import sys
