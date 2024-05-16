@@ -319,7 +319,7 @@ class AdicionarEditarClienteDialog(QDialog):
 
         self.setLayout(layout)
 class DetalhesClienteDialog(QDialog):
-    def __init__(self,cliente_info, equipamentos):
+    def __init__(self, cliente_info, equipamentos):
         super().__init__()
         
         self.controller_equipamento = EquipamentoClienteController()
@@ -340,16 +340,20 @@ class DetalhesClienteDialog(QDialog):
         layout.addWidget(equip_label)
 
         self.equip_table = QTableWidget()
-        self.equip_table.setColumnCount(1)
-        self.equip_table.setHorizontalHeaderLabels(['Descrição'])
+        self.equip_table.setColumnCount(2)  # Adicionando uma coluna extra para a ID do equipamento
+        self.equip_table.setHorizontalHeaderLabels(['Código', 'Descrição'])
         self.equip_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.equip_table.setRowCount(len(equipamentos))
 
         for row, equip in enumerate(equipamentos):
+            id_item = QTableWidgetItem(str(equip['id']))  # Adicionando a ID do equipamento
             descricao_item = QTableWidgetItem(equip['descricao'])
-            self.equip_table.setItem(row, 0, descricao_item)
+            self.equip_table.setItem(row, 0, id_item)  # Adicionando a ID na primeira coluna
+            self.equip_table.setItem(row, 1, descricao_item)
 
         layout.addWidget(self.equip_table)
+
+        self.setLayout(layout)
 
         
         # Barra de ferramentas com botões de ação para os equipamentos
@@ -360,14 +364,28 @@ class DetalhesClienteDialog(QDialog):
         h_layout.addStretch()  # Adiciona um espaço elástico à esquerda do botão
         
         # Botões de ação para os equipamentos
-        action_add_equip = QAction("Adicionar Equipamento", self)
+        action_add_equip = QAction("Adicionar", self)
+        action_edit_equip = QAction("Editar", self)
+        action_delete_equip = QAction("Excluir", self)
+        action_inactive_equip = QAction("Inativar", self)
+        action_ative_equip = QAction("Reativar", self)
+
+        
         equip_toolbar.addAction(action_add_equip)
+        equip_toolbar.addAction(action_edit_equip)
+        equip_toolbar.addAction(action_delete_equip)
+        equip_toolbar.addAction(action_inactive_equip)
+        equip_toolbar.addAction(action_ative_equip)
         
         h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
         h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
 
         # Configurar conexões de sinais e slots para os botões dos equipamentos
         action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
+        action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
+        action_delete_equip.triggered.connect(self.delete_equipamento)
+        action_inactive_equip.triggered.connect(self.inactive_equipamento)
+        action_ative_equip.triggered.connect(self.ative_equipamento)
 
         layout.addLayout(h_layout)  # Adiciona o layout horizontal ao layout vertical principal
 
@@ -386,23 +404,103 @@ class DetalhesClienteDialog(QDialog):
         # Atualiza a tabela de equipamentos
         self.update_equip_table()
    
+    def edit_equipamento(self, descricao, id):
+        self.controller_equipamento.EditarequipamentoCliente( descricao,id)
+        cliente_id = self.cliente_info['Código']
+        self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+        self.update_equip_table()  # Atualizar a tabela após adicionar clientes
 
+
+    def delete_equipamento(self,id):
+      
+        selected_row = self.equip_table.currentRow()
+        if selected_row != -1:
+            id = self.equip_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o equipamento Código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.controller_equipamento.DeletarEquipamentoCliente(id)
+                cliente_id = self.cliente_info['Código']
+                self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+                self.update_equip_table()
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")
+
+    def inactive_equipamento(self):
+        selected_row = self.equip_table.currentRow()
+        if selected_row != -1:
+            id = self.equip_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o equipamento código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                resultado = self.controller_equipamento.ValidarEquipamentoCliente(id)
+                if resultado:
+                    estado_equipamento = resultado[0][0]  # Obtém o estado do cliente da consulta
+                    if estado_equipamento == 1:  # Verifica se o cliente está ativo
+                        self.controller_equipamento.InativarEquipamentoCliente(id)
+                        cliente_id = self.cliente_info['Código']
+                        self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+                        self.update_equip_table()
+                    else:
+                        QMessageBox.warning(self, "Aviso", "Equipamento já está inativo.")
+                else:
+                    QMessageBox.warning(self, "Aviso", "Equipamento não encontrado.")
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para inativar.")
+ 
+    def ative_equipamento(self):
+        selected_row = self.equip_table.currentRow()
+        if selected_row != -1:
+            id = self.equip_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar o equipamento código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                resultado = self.controller_equipamento.ValidarEquipamentoCliente(id)
+                if resultado:
+                    estado_equipamento = resultado[0][0]  # Obtém o estado do cliente da consulta
+                    if estado_equipamento == 0:  # Verifica se o cliente está inativo
+                        self.controller_equipamento.AtivarEquipamentoCliente(id)
+                        cliente_id = self.cliente_info['Código']
+                        self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+                        self.update_equip_table()
+                        
+                    else:
+                        QMessageBox.warning(self, "Aviso", "Equipamento já está Ativo.")
+                else:
+                    QMessageBox.warning(self, "Aviso", "Equipamento não encontrado.")
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para Ativar.")
         
     def update_equip_table(self):
         # Limpa a tabela de equipamentos
         self.equip_table.setRowCount(0)
 
+        # Define o número de linhas da tabela para corresponder ao número de equipamentos
+        self.equip_table.setRowCount(len(self.equipamentos))
+
         # Adiciona os equipamentos atualizados à tabela
         for row, equip in enumerate(self.equipamentos):
+            id_item = QTableWidgetItem(str(equip['id']))  # Adicionando a ID do equipamento
             descricao_item = QTableWidgetItem(equip['descricao'])
-            self.equip_table.insertRow(row)
-            self.equip_table.setItem(row, 0, descricao_item)
-    
+            self.equip_table.setItem(row, 0, id_item)  # Adicionando a ID na primeira coluna
+            self.equip_table.setItem(row, 1, descricao_item)
+
     def show_add_equipamento_dialog(self):
         dialog = AdicionarEditarEquipamentoDialog()
         if dialog.exec_():
             descricao = dialog.descricao.text()
             self.add_equipamento(descricao)
+    
+    def show_edit_equipamento_dialog(self):
+        selected_row = self.equip_table.currentRow()
+        if selected_row != -1:
+            id = self.equip_table.item(selected_row, 0).text()
+            descricao = self.equip_table.item(selected_row, 1).text()
+            
+            dialog = AdicionarEditarEquipamentoDialog(descricao)
+            if dialog.exec_():
+                novo_descricao = dialog.descricao.text()
+                
+                self.edit_equipamento(novo_descricao,id)
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para editar.")
    
     
        
