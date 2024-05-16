@@ -1,17 +1,21 @@
 from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
 from cliente.cliente_controller import ClienteController
+from PyQt5.QtGui import QIcon
 
 from cliente.equipamento_cliente_controller import EquipamentoClienteController
 
 class ClienteUI(QWidget):
-    def __init__(self):
+    def __init__(self,user_type):
         super().__init__()
         self.controller = ClienteController()
         
         self.controller_equipamento = EquipamentoClienteController()
+        
+        self.user_type= user_type
         self.initUI()
+        
+        print(f"tipo que chegou na cliente: {user_type}")
 
     def initUI(self):
         # Layout principal
@@ -23,19 +27,19 @@ class ClienteUI(QWidget):
         self.filter_input = QLineEdit()
         self.filter_input.textChanged.connect(self.filter_table)
         filter_layout.addWidget(self.filter_input)
-        
+        if self.user_type == 'adm':
         # Botões de filtro
-        self.btn_all = QPushButton("Todos")
-        self.btn_all.clicked.connect(self.filter_all)
-        filter_layout.addWidget(self.btn_all)
+            self.btn_all = QPushButton("Todos")
+            self.btn_all.clicked.connect(self.filter_all)
+            filter_layout.addWidget(self.btn_all)
 
-        self.btn_active = QPushButton("Ativos")
-        self.btn_active.clicked.connect(self.filter_active)
-        filter_layout.addWidget(self.btn_active)
+            self.btn_active = QPushButton("Ativos")
+            self.btn_active.clicked.connect(self.filter_active)
+            filter_layout.addWidget(self.btn_active)
 
-        self.btn_inactive = QPushButton("Inativos")
-        self.btn_inactive.clicked.connect(self.filter_inactive)
-        filter_layout.addWidget(self.btn_inactive)
+            self.btn_inactive = QPushButton("Inativos")
+            self.btn_inactive.clicked.connect(self.filter_inactive)
+            filter_layout.addWidget(self.btn_inactive)
 
         layout.addLayout(filter_layout)
 
@@ -49,26 +53,41 @@ class ClienteUI(QWidget):
         # Barra de ferramentas com botões de ação
         toolbar = QToolBar("Barra de Ferramentas")
         layout.addWidget(toolbar)
+        
+        if self.user_type == 'adm':
+            # Botões de ação
+            action_add = QAction("Adicionar", self)
+            action_edit = QAction("Editar", self)
+            action_delete = QAction("Excluir", self)
+            action_inactive = QAction("Inativar", self)
+            action_ative = QAction("Reativar", self)
 
-        # Botões de ação
-        action_add = QAction("Adicionar", self)
-        action_edit = QAction("Editar", self)
-        action_delete = QAction("Excluir", self)
-        action_inactive = QAction("Inativar", self)
-        action_ative = QAction("Reativar", self)
-
-        toolbar.addAction(action_add)
-        toolbar.addAction(action_edit)
-        toolbar.addAction(action_delete)
-        toolbar.addAction(action_inactive)        
-        toolbar.addAction(action_ative)
+            toolbar.addAction(action_add)
+            toolbar.addAction(action_edit)
+            toolbar.addAction(action_delete)
+            toolbar.addAction(action_inactive)        
+            toolbar.addAction(action_ative)
 
         # Configurar conexões de sinais e slots para os botões
-        action_add.triggered.connect(self.show_add_cliente_dialog)
-        action_edit.triggered.connect(self.show_edit_cliente_dialog)
-        action_delete.triggered.connect(self.delete_cliente)
-        action_inactive.triggered.connect(self.inactive_cliente)
-        action_ative.triggered.connect(self.ative_cliente)
+            action_add.triggered.connect(self.show_add_cliente_dialog)
+            action_edit.triggered.connect(self.show_edit_cliente_dialog)
+            action_delete.triggered.connect(self.delete_cliente)
+            action_inactive.triggered.connect(self.inactive_cliente)
+            action_ative.triggered.connect(self.ative_cliente)
+        if self.user_type == 'usr':
+            # Botões de ação
+            action_add = QAction("Adicionar", self)
+            action_edit = QAction("Editar", self)
+            action_inactive = QAction("Inativar", self)
+
+            toolbar.addAction(action_add)
+            toolbar.addAction(action_edit)
+            toolbar.addAction(action_inactive)   
+
+        # Configurar conexões de sinais e slots para os botões
+            action_add.triggered.connect(self.show_add_cliente_dialog)
+            action_edit.triggered.connect(self.show_edit_cliente_dialog)
+            action_inactive.triggered.connect(self.inactive_cliente)
 
         self.setLayout(layout)
         
@@ -192,7 +211,7 @@ class ClienteUI(QWidget):
                     estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
                     if estado_cliente == 1:  # Verifica se o cliente está ativo
                         self.controller.InativarCliente(id)
-                        self.filter_all()
+                        self.filter_active()
                     else:
                         QMessageBox.warning(self, "Aviso", "Cliente já está inativo.")
                 else:
@@ -211,7 +230,7 @@ class ClienteUI(QWidget):
                     estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
                     if estado_cliente == 0:  # Verifica se o cliente está inativo
                         self.controller.AtivarCliente(id)
-                        self.filter_all()
+                        self.filter_active()
                     else:
                         QMessageBox.warning(self, "Aviso", "Cliente já está Ativo.")
                 else:
@@ -272,7 +291,7 @@ class ClienteUI(QWidget):
             cliente_id = self.client_table.item(selected_row, 0).text()  
             equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
 
-            dialog = DetalhesClienteDialog(cliente_info, equipamentos)
+            dialog = DetalhesClienteDialog(cliente_info, equipamentos,self.user_type)
             dialog.exec_()
 
         else:
@@ -282,48 +301,49 @@ class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar Cliente")
+        self.setWindowIcon(QIcon("icon.png"))  # Adicione o ícone desejado
 
         layout = QVBoxLayout()
 
+        form_layout = QFormLayout()
+
         self.nome = QLineEdit(nome)
-        self.nome.setPlaceholderText("Nome")
-        layout.addWidget(self.nome)
-
         self.cep = QLineEdit(cep)
-        self.cep.setPlaceholderText("CEP")
-        layout.addWidget(self.cep)
-
         self.endereco = QLineEdit(endereco)
-        self.endereco.setPlaceholderText("Endereço")
-        layout.addWidget(self.endereco)
-
         self.cidade = QLineEdit(cidade)
-        self.cidade.setPlaceholderText("Cidade")
-        layout.addWidget(self.cidade)
-
         self.estado = QLineEdit(estado)
-        self.estado.setPlaceholderText("Estado")
-        layout.addWidget(self.estado)
-
         self.cpf_cnpj = QLineEdit(cpf_cnpj)
-        self.cpf_cnpj.setPlaceholderText("CPF/CNPJ")
-        layout.addWidget(self.cpf_cnpj)
-
         self.telefone = QLineEdit(telefone)
-        self.telefone.setPlaceholderText("Telefone")
-        layout.addWidget(self.telefone)
 
+        form_layout.addRow(QLabel("Nome:"), self.nome)
+        form_layout.addRow(QLabel("CEP:"), self.cep)
+        form_layout.addRow(QLabel("Endereço:"), self.endereco)
+        form_layout.addRow(QLabel("Cidade:"), self.cidade)
+        form_layout.addRow(QLabel("Estado:"), self.estado)
+        form_layout.addRow(QLabel("CPF/CNPJ:"), self.cpf_cnpj)
+        form_layout.addRow(QLabel("Telefone:"), self.telefone)
+
+        layout.addLayout(form_layout)
+
+        # Adicione um layout de botão para alinhar os botões horizontalmente
+        button_layout = QHBoxLayout()
         btn_salvar = QPushButton("Salvar")
+        btn_cancelar = QPushButton("Cancelar")
         btn_salvar.clicked.connect(self.accept)
-        layout.addWidget(btn_salvar)
+        btn_cancelar.clicked.connect(self.reject)
+        button_layout.addWidget(btn_salvar)
+        button_layout.addWidget(btn_cancelar)
+
+        layout.addLayout(button_layout)
 
         self.setLayout(layout)
 class DetalhesClienteDialog(QDialog):
-    def __init__(self, cliente_info, equipamentos):
+    def __init__(self, cliente_info, equipamentos,user_type):
         super().__init__()
         
         self.controller_equipamento = EquipamentoClienteController()
         self.cliente_info = cliente_info
+        self.user_type = user_type
 
         self.setWindowTitle("Detalhes do Cliente")
         layout = QVBoxLayout()
@@ -363,30 +383,49 @@ class DetalhesClienteDialog(QDialog):
         h_layout = QHBoxLayout()
         h_layout.addStretch()  # Adiciona um espaço elástico à esquerda do botão
         
+        if self.user_type == 'adm':
         # Botões de ação para os equipamentos
-        action_add_equip = QAction("Adicionar", self)
-        action_edit_equip = QAction("Editar", self)
-        action_delete_equip = QAction("Excluir", self)
-        action_inactive_equip = QAction("Inativar", self)
-        action_ative_equip = QAction("Reativar", self)
+            action_add_equip = QAction("Adicionar", self)
+            action_edit_equip = QAction("Editar", self)
+            action_delete_equip = QAction("Excluir", self)
+            action_inactive_equip = QAction("Inativar", self)
+            action_ative_equip = QAction("Reativar", self)
 
         
-        equip_toolbar.addAction(action_add_equip)
-        equip_toolbar.addAction(action_edit_equip)
-        equip_toolbar.addAction(action_delete_equip)
-        equip_toolbar.addAction(action_inactive_equip)
-        equip_toolbar.addAction(action_ative_equip)
+            equip_toolbar.addAction(action_add_equip)
+            equip_toolbar.addAction(action_edit_equip)
+            equip_toolbar.addAction(action_delete_equip)
+            equip_toolbar.addAction(action_inactive_equip)
+            equip_toolbar.addAction(action_ative_equip)
         
-        h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
-        h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
+            h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
+            h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
 
         # Configurar conexões de sinais e slots para os botões dos equipamentos
-        action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
-        action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
-        action_delete_equip.triggered.connect(self.delete_equipamento)
-        action_inactive_equip.triggered.connect(self.inactive_equipamento)
-        action_ative_equip.triggered.connect(self.ative_equipamento)
+            action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
+            action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
+            action_delete_equip.triggered.connect(self.delete_equipamento)
+            action_inactive_equip.triggered.connect(self.inactive_equipamento)
+            action_ative_equip.triggered.connect(self.ative_equipamento)
+        if self.user_type == 'usr':
+        # Botões de ação para os equipamentos
+            action_add_equip = QAction("Adicionar", self)
+            action_edit_equip = QAction("Editar", self)
+            action_inactive_equip = QAction("Inativar", self)
 
+        
+            equip_toolbar.addAction(action_add_equip)
+            equip_toolbar.addAction(action_edit_equip)
+            equip_toolbar.addAction(action_inactive_equip)
+        
+            h_layout.addWidget(equip_toolbar)  # Adiciona a barra de ferramentas ao layout horizontal
+            h_layout.addStretch()  # Adiciona um espaço elástico à direita do botão
+
+        # Configurar conexões de sinais e slots para os botões dos equipamentos
+            action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
+            action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
+            action_inactive_equip.triggered.connect(self.inactive_equipamento)
+            
         layout.addLayout(h_layout)  # Adiciona o layout horizontal ao layout vertical principal
 
         self.setLayout(layout)

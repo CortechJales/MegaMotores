@@ -7,7 +7,7 @@ from PyQt5.QtGui import QIcon, QFont
 import sys
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self,user_type=None):
         super().__init__()
 
         self.setWindowTitle("Sistema de Gerenciamento")
@@ -16,8 +16,9 @@ class MainWindow(QMainWindow):
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
-
-        self.cliente_ui = ClienteUI()
+        
+        
+        self.cliente_ui = ClienteUI(user_type)
         self.produto_ui = ProdutoUI()
         self.ordem_de_servico_ui = OrdemDeServicoUI()
 
@@ -89,15 +90,26 @@ class MainWindow(QMainWindow):
 
         menu.exec_(self.sender().mapToGlobal(self.sender().rect().bottomRight()))
 
+    
     def show_login_dialog(self):
         self.hide()  # Esconde a janela principal
         self.login_window = LoginWindow()  # Cria uma nova instância da janela de login
         self.login_window.show()  # Mostra a janela de login
-        self.login_window.login_successful.connect(self.show_main_window)
+        if self.login_window.exec_() == LoginWindow.Accepted:
+            user_type = self.login_window.user_type  # Obtendo o user_type da LoginWindow
+            self.handle_login_success(user_type)
 
-    def show_main_window(self):
+    
+    def handle_login_success(self, user_type):
+        self.user_type = user_type
+        self.show_main_window(user_type)  # Passa o user_type recebido como argumento
+
+
+    def show_main_window(self, user_type):
         self.login_window.close()  # Fecha a janela de login
-        self.show()  # Mostra novamente a janela principal
+        self.main_window = MainWindow(user_type)  # Passa o user_type recebido como argumento
+        self.main_window.show()
+ 
 
     def close_application(self):
         self.close()

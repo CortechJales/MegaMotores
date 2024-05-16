@@ -54,6 +54,8 @@ class LoginWindow(QDialog):
         user_type = self.verificar_login(username, password)
         if user_type:
             print("Login bem-sucedido!")
+            
+            print(f"tipo verificado: {user_type}")
             self.user_type = user_type
             self.accept()
             self.login_successful.emit()
