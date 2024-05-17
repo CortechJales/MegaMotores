@@ -2,12 +2,15 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, Q
 from cliente.cliente_ui import ClienteUI
 from produto.produto_ui import ProdutoUI
 from ordem_servico.ordem_de_servico_ui import OrdemDeServicoUI
+from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
 from PyQt5.QtGui import QIcon, QFont
 import sys
 
+
+
 class MainWindow(QMainWindow):
-    def __init__(self,user_type=None):
+    def __init__(self, user_type=None):
         super().__init__()
 
         self.setWindowTitle("Sistema de Gerenciamento")
@@ -16,33 +19,27 @@ class MainWindow(QMainWindow):
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
-        
-        
+
         self.cliente_ui = ClienteUI(user_type)
         self.produto_ui = ProdutoUI()
         self.ordem_de_servico_ui = OrdemDeServicoUI()
+        self.cadastro_ui = CadastroUsuario()
 
         self.central_widget.addWidget(self.cliente_ui)
         self.central_widget.addWidget(self.produto_ui)
         self.central_widget.addWidget(self.ordem_de_servico_ui)
+        self.central_widget.addWidget(self.cadastro_ui)
 
-        self.create_toolbar()
+        self.create_toolbar(user_type)
         self.center_on_screen()
-        
+
     def center_on_screen(self):
-        # Obter a geometria da tela primária
         screen_geometry = QApplication.primaryScreen().geometry()
-
-        # Obter a geometria da janela de login
         window_geometry = self.frameGeometry()
-
-        # Definir a posição da janela de login para o centro da tela
         window_geometry.moveCenter(screen_geometry.center())
-
-        # Aplicar a nova posição da janela de login
         self.move(window_geometry.topLeft())
 
-    def create_toolbar(self):
+    def create_toolbar(self,user_type):
         toolbar = self.addToolBar("Toolbar")
 
         cliente_action = QAction("Clientes", self)
@@ -53,11 +50,30 @@ class MainWindow(QMainWindow):
 
         ordem_de_servico_action = QAction("Ordens de Serviço", self)
         ordem_de_servico_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.ordem_de_servico_ui))
-
-        toolbar.addAction(cliente_action)
-        toolbar.addAction(produto_action)
-        toolbar.addAction(ordem_de_servico_action)
-
+        if user_type == 'adm':
+            usuario_action = QAction("Usuários", self)
+            usuario_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cadastro_ui))
+        # Estilo para os botões da barra de ferramentas
+        button_style = """
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-left: 10px;
+        """
+        if user_type == 'adm':
+            for action in [cliente_action, produto_action, ordem_de_servico_action,usuario_action]:
+                action_button = QPushButton(action.text(), self)
+                action_button.setStyleSheet(button_style)
+                action_button.clicked.connect(action.trigger)
+                toolbar.addWidget(action_button)
+        else:
+            for action in [cliente_action, produto_action, ordem_de_servico_action]:
+                action_button = QPushButton(action.text(), self)
+                action_button.setStyleSheet(button_style)
+                action_button.clicked.connect(action.trigger)
+                toolbar.addWidget(action_button)
         # Adicionar botão de deslogar à direita
         layout = QHBoxLayout()
         spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -66,7 +82,14 @@ class MainWindow(QMainWindow):
         btn_logout = QPushButton("Deslogar")
         btn_logout.setMinimumWidth(100)
         btn_logout.clicked.connect(self.show_logout_menu)
-        btn_logout.setStyleSheet("background-color: #f0f0f0; color: #666; border: 1px solid #ccc; border-radius: 5px;")
+        btn_logout.setStyleSheet("""
+            background-color: #FF5733;
+            color: white;
+            border: 2px solid #FF5733;
+            border-radius: 5px;
+            padding: 5px 10px;
+            margin-left: 10px;
+        """)
         btn_logout.setFont(QFont("Arial", 10))
 
         layout.addWidget(btn_logout)
@@ -90,26 +113,22 @@ class MainWindow(QMainWindow):
 
         menu.exec_(self.sender().mapToGlobal(self.sender().rect().bottomRight()))
 
-    
     def show_login_dialog(self):
-        self.hide()  # Esconde a janela principal
-        self.login_window = LoginWindow()  # Cria uma nova instância da janela de login
-        self.login_window.show()  # Mostra a janela de login
+        self.hide()
+        self.login_window = LoginWindow()
+        self.login_window.show()
         if self.login_window.exec_() == LoginWindow.Accepted:
-            user_type = self.login_window.user_type  # Obtendo o user_type da LoginWindow
+            user_type = self.login_window.user_type
             self.handle_login_success(user_type)
 
-    
     def handle_login_success(self, user_type):
         self.user_type = user_type
-        self.show_main_window(user_type)  # Passa o user_type recebido como argumento
-
+        self.show_main_window(user_type)
 
     def show_main_window(self, user_type):
-        self.login_window.close()  # Fecha a janela de login
-        self.main_window = MainWindow(user_type)  # Passa o user_type recebido como argumento
+        self.login_window.close()
+        self.main_window = MainWindow(user_type)
         self.main_window.show()
- 
 
     def close_application(self):
         self.close()

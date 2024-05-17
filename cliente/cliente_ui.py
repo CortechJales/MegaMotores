@@ -27,17 +27,35 @@ class ClienteUI(QWidget):
         self.filter_input = QLineEdit()
         self.filter_input.textChanged.connect(self.filter_table)
         filter_layout.addWidget(self.filter_input)
+
+        # Estilo para os botões de filtro
+        filter_button_style = """
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 5px 10px;
+                margin-left: 10px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """
+
         if self.user_type == 'adm':
-        # Botões de filtro
             self.btn_all = QPushButton("Todos")
+            self.btn_all.setStyleSheet(filter_button_style)
             self.btn_all.clicked.connect(self.filter_all)
             filter_layout.addWidget(self.btn_all)
 
             self.btn_active = QPushButton("Ativos")
+            self.btn_active.setStyleSheet(filter_button_style)
             self.btn_active.clicked.connect(self.filter_active)
             filter_layout.addWidget(self.btn_active)
 
             self.btn_inactive = QPushButton("Inativos")
+            self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_inactive)
             filter_layout.addWidget(self.btn_inactive)
 
@@ -45,6 +63,30 @@ class ClienteUI(QWidget):
 
         # Tabela de clientes
         self.client_table = QTableWidget()
+        self.client_table.setStyleSheet("""
+            QTableWidget {
+                background-color: white;
+                border: 2px solid #3498db;
+                padding: 5px;
+                border-radius: 5px;
+                color: #333;
+            }
+            
+            QHeaderView::section {
+                background-color: #3498db;
+                color: white;
+                padding: 5px;
+                border: 1px solid #ddd;
+            }
+            QTableWidget::item {
+                border: none;
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #8fdefe;
+                color: black;
+            }
+        """)
         self.client_table.setColumnCount(9)
         self.client_table.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço', 'Cidade','Estado', 'CPF/CNPJ', 'Telefone','Ativo'])
         self.client_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -52,6 +94,24 @@ class ClienteUI(QWidget):
 
         # Barra de ferramentas com botões de ação
         toolbar = QToolBar("Barra de Ferramentas")
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #ecf0f1;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QToolButton {
+                background-color: #3498db;
+                color: white;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 5px;
+                margin-right: 5px;
+            }
+            QToolButton:hover {
+                background-color: #2980b9;
+            }
+        """)
         layout.addWidget(toolbar)
         
         if self.user_type == 'adm':
@@ -384,7 +444,7 @@ class DetalhesClienteDialog(QDialog):
             label = QLabel(key.capitalize() + ":")
             field = QLineEdit(str(value))
             field.setReadOnly(True)
-            field.setStyleSheet("background-color: white; border: 2px solid #3498db; padding: 5px; border-radius: 5px;")
+            field.setStyleSheet("background-color: white; border: 2px solid #3498db; padding: 5px; border-radius: 5px; color: #333;")
             self.campos_cliente[key] = field
             form_layout.addRow(label, field)
 
@@ -394,64 +454,102 @@ class DetalhesClienteDialog(QDialog):
         layout.addWidget(equip_label)
 
         self.equip_table = QTableWidget()
+        self.equip_table.setStyleSheet("""
+            QTableWidget {
+                background-color: white;
+                border: 2px solid #3498db;
+                padding: 5px;
+                border-radius: 5px;
+                color: #333;
+            }
+            
+            QHeaderView::section {
+                background-color: #3498db;
+                color: white;
+                padding: 5px;
+                border: 1px solid #ddd;
+            }
+            QTableWidget::item {
+                border: none;
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #8fdefe;
+                color: black;
+            }
+        """)
         self.equip_table.setColumnCount(2)  # Adicionando uma coluna extra para a ID do equipamento
         self.equip_table.setHorizontalHeaderLabels(['Código', 'Descrição'])
         self.equip_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.equip_table.setRowCount(len(equipamentos))
-
-        for row, equip in enumerate(equipamentos):
-            id_item = QTableWidgetItem(str(equip['id']))  # Adicionando a ID do equipamento
-            descricao_item = QTableWidgetItem(equip['descricao'])
-            self.equip_table.setItem(row, 0, id_item)  # Adicionando a ID na primeira coluna
-            self.equip_table.setItem(row, 1, descricao_item)
-
+        self.equip_table.verticalHeader().setVisible(False)
+        cliente_id = self.cliente_info['Código']
+        self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
+        self.update_equip_table()
+        
+        
         layout.addWidget(self.equip_table)
 
-        # Barra de ferramentas com botões de ação para os equipamentos
-        equip_toolbar = QToolBar("Barra de Ferramentas")
-        equip_toolbar.setStyleSheet("background-color: #ecf0f1; padding: 10px; border-radius: 10px;")
-
+        # Barra de ferramentas com botões de ação
+        toolbar = QToolBar("Barra de Ferramentas")
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #ecf0f1;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QToolButton {
+                background-color: #3498db;
+                color: white;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 5px;
+                margin-right: 5px;
+            }
+            QToolButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+        layout.addWidget(toolbar)
+        
         if self.user_type == 'adm':
-            # Botões de ação para os equipamentos
-            action_add_equip = QAction("Adicionar", self)
-            action_edit_equip = QAction("Editar", self)
-            action_delete_equip = QAction("Excluir", self)
-            action_inactive_equip = QAction("Inativar", self)
-            action_ative_equip = QAction("Reativar", self)
+            # Botões de ação
+            action_add = QAction("Adicionar", self)
+            action_edit = QAction("Editar", self)
+            action_delete = QAction("Excluir", self)
+            action_inactive = QAction("Inativar", self)
+            action_ative = QAction("Reativar", self)
 
-            equip_toolbar.addAction(action_add_equip)
-            equip_toolbar.addAction(action_edit_equip)
-            equip_toolbar.addAction(action_delete_equip)
-            equip_toolbar.addAction(action_inactive_equip)
-            equip_toolbar.addAction(action_ative_equip)
+            toolbar.addAction(action_add)
+            toolbar.addAction(action_edit)
+            toolbar.addAction(action_delete)
+            toolbar.addAction(action_inactive)        
+            toolbar.addAction(action_ative)
 
-            # Configurar conexões de sinais e slots para os botões dos equipamentos
-            action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
-            action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
-            action_delete_equip.triggered.connect(self.delete_equipamento)
-            action_inactive_equip.triggered.connect(self.inactive_equipamento)
-            action_ative_equip.triggered.connect(self.ative_equipamento)
+            # Configurar conexões de sinais e slots para os botões
+            action_add.triggered.connect(self.show_add_equipamento_dialog)
+            action_edit.triggered.connect(self.show_edit_equipamento_dialog)
+            action_delete.triggered.connect(self.delete_equipamento)
+            action_inactive.triggered.connect(self.inactive_equipamento)
+            action_ative.triggered.connect(self.ative_equipamento)
 
         elif self.user_type == 'usr':
-            # Botões de ação para os equipamentos
-            action_add_equip = QAction("Adicionar", self)
-            action_edit_equip = QAction("Editar", self)
-            action_inactive_equip = QAction("Inativar", self)
+            # Botões de ação
+            action_add = QAction("Adicionar", self)
+            action_edit = QAction("Editar", self)
+            action_inactive = QAction("Inativar", self)
 
-            equip_toolbar.addAction(action_add_equip)
-            equip_toolbar.addAction(action_edit_equip)
-            equip_toolbar.addAction(action_inactive_equip)
+            toolbar.addAction(action_add)
+            toolbar.addAction(action_edit)
+            toolbar.addAction(action_inactive)   
 
-            # Configurar conexões de sinais e slots para os botões dos equipamentos
-            action_add_equip.triggered.connect(self.show_add_equipamento_dialog)
-            action_edit_equip.triggered.connect(self.show_edit_equipamento_dialog)
-            action_inactive_equip.triggered.connect(self.inactive_equipamento)
-
-        layout.addWidget(equip_toolbar)
+            # Configurar conexões de sinais e slots para os botões
+            action_add.triggered.connect(self.show_add_equipamento_dialog)
+            action_edit.triggered.connect(self.show_edit_equipamento_dialog)
+            action_inactive.triggered.connect(self.inactive_equipamento)
 
         self.setLayout(layout)
 
-
+    
     # Métodos para manipulação de equipamentos...
     
     def add_equipamento(self,descricao):
