@@ -1,10 +1,10 @@
-from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, QWidget, QSpacerItem, QPushButton, QSizePolicy, QMessageBox, QMenu, QApplication
+from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, QWidget, QSpacerItem, QPushButton, QSizePolicy, QMessageBox, QMenu, QApplication, QLabel
 from cliente.cliente_ui import ClienteUI
 from produto.produto_ui import ProdutoUI
 from ordem_servico.ordem_de_servico_ui import OrdemDeServicoUI
 from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont,QPixmap
 import sys
 
 
@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Sistema de Gerenciamento")
         self.setGeometry(100, 100, 800, 600)
-        self.setWindowIcon(QIcon("img/logotipo.png"))
+        self.setWindowIcon(QIcon("img/megamotores.png"))
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
@@ -39,8 +39,14 @@ class MainWindow(QMainWindow):
         window_geometry.moveCenter(screen_geometry.center())
         self.move(window_geometry.topLeft())
 
-    def create_toolbar(self,user_type):
+    def create_toolbar(self, user_type):
         toolbar = self.addToolBar("Toolbar")
+
+        logo_label = QLabel(self)
+        pixmap = QPixmap("img/mega.png")
+        scaled_pixmap = pixmap.scaled(340, 60)  # Ajustar o tamanho conforme necessário
+        logo_label.setPixmap(scaled_pixmap)
+        toolbar.addWidget(logo_label)
 
         cliente_action = QAction("Clientes", self)
         cliente_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cliente_ui))
@@ -59,11 +65,13 @@ class MainWindow(QMainWindow):
             color: white;
             border: none;
             border-radius: 5px;
-            padding: 5px 10px;
+            padding: 10px 10px;
             margin-left: 10px;
+            margin-top: 5px;
+        
         """
         if user_type == 'adm':
-            for action in [cliente_action, produto_action, ordem_de_servico_action,usuario_action]:
+            for action in [cliente_action, produto_action, ordem_de_servico_action, usuario_action]:
                 action_button = QPushButton(action.text(), self)
                 action_button.setStyleSheet(button_style)
                 action_button.clicked.connect(action.trigger)
@@ -81,7 +89,7 @@ class MainWindow(QMainWindow):
 
         btn_logout = QPushButton("Deslogar")
         btn_logout.setMinimumWidth(100)
-        btn_logout.clicked.connect(self.show_logout_menu)
+        btn_logout.clicked.connect(self.show_login_dialog)  # Modificado aqui
         btn_logout.setStyleSheet("""
             background-color: #FF5733;
             color: white;
@@ -98,6 +106,7 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
 
         toolbar.addWidget(widget)
+
 
     def show_logout_menu(self):
         menu = QMenu()

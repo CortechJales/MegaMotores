@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt
 from cliente.cliente_controller import ClienteController
 from PyQt5.QtGui import QIcon
+import re
+import requests
 
 from cliente.equipamento_cliente_controller import EquipamentoClienteController
 
@@ -87,8 +89,8 @@ class ClienteUI(QWidget):
                 color: black;
             }
         """)
-        self.client_table.setColumnCount(9)
-        self.client_table.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço', 'Cidade','Estado', 'CPF/CNPJ', 'Telefone','Ativo'])
+        self.client_table.setColumnCount(10)
+        self.client_table.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço','Número', 'Cidade','Estado', 'CPF/CNPJ', 'Telefone','Ativo'])
         self.client_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.client_table)
 
@@ -180,7 +182,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  # Coluna 'Ativo'
+                if column_number == 9:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -203,7 +205,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  # Coluna 'Ativo'
+                if column_number == 9:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -226,7 +228,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  # Coluna 'Ativo'
+                if column_number == 9:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -239,12 +241,12 @@ class ClienteUI(QWidget):
                 else:
                     self.client_table.setItem(row_number, column_number, item)
 
-    def add_cliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone):
-        self.controller.CadastrarCliente( nome, cep, endereco, cidade, estado, cpf_cnpj, telefone)
+    def add_cliente(self, nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone):
+        self.controller.CadastrarCliente( nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
-    def edit_cliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, id):
-        self.controller.EditarCliente( nome, cep, endereco, cidade, estado, cpf_cnpj, telefone,id)
+    def edit_cliente(self, nome, cep, endereco, numero,cidade, estado, cpf_cnpj, telefone, id):
+        self.controller.EditarCliente( nome, cep, endereco,numero, cidade, estado, cpf_cnpj, telefone,id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
 
@@ -304,11 +306,12 @@ class ClienteUI(QWidget):
             nome = dialog.nome.text()
             cep = dialog.cep.text()
             endereco = dialog.endereco.text()
+            numero = dialog.numero.text()
             cidade = dialog.cidade.text()
-            estado = dialog.estado.text()
+            estado = dialog.estado.currentText()
             cpf_cnpj = dialog.cpf_cnpj.text()
             telefone = dialog.telefone.text()
-            self.add_cliente(nome, cep, endereco, cidade, estado, cpf_cnpj, telefone)
+            self.add_cliente(nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone)
    
     def show_edit_cliente_dialog(self):
         selected_row = self.client_table.currentRow()
@@ -317,20 +320,22 @@ class ClienteUI(QWidget):
             nome = self.client_table.item(selected_row, 1).text()
             cep = self.client_table.item(selected_row, 2).text()
             endereco = self.client_table.item(selected_row, 3).text()
-            cidade = self.client_table.item(selected_row, 4).text()
-            estado = self.client_table.item(selected_row, 5).text()
-            cpf_cnpj = self.client_table.item(selected_row, 6).text()            
-            telefone = self.client_table.item(selected_row, 7).text()
-            dialog = AdicionarEditarClienteDialog(nome, cep, endereco, cidade, estado, cpf_cnpj,telefone)
+            numero = self.client_table.item(selected_row, 4).text()
+            cidade = self.client_table.item(selected_row, 5).text()
+            estado = self.client_table.item(selected_row, 6).text()
+            cpf_cnpj = self.client_table.item(selected_row, 7).text()            
+            telefone = self.client_table.item(selected_row, 8).text()
+            dialog = AdicionarEditarClienteDialog(nome, cep, endereco,numero, cidade, estado, cpf_cnpj,telefone)
             if dialog.exec_():
                 novo_nome = dialog.nome.text()
                 novo_cep = dialog.cep.text()
                 novo_endereco = dialog.endereco.text()
+                novo_numero = dialog.numero.text()
                 novo_cidade = dialog.cidade.text()
-                novo_estado = dialog.estado.text()
+                novo_estado = dialog.estado.currentText()
                 novo_cpf_cnpj = dialog.cpf_cnpj.text()
                 novo_telefone = dialog.telefone.text()
-                self.edit_cliente(novo_nome, novo_cep, novo_endereco, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone,id)
+                self.edit_cliente(novo_nome, novo_cep, novo_endereco,novo_numero, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone,id)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para editar.")
 
@@ -340,13 +345,14 @@ class ClienteUI(QWidget):
            
             cliente_info = {
             'Código': self.client_table.item(selected_row, 0).text(),   
-            'nome': self.client_table.item(selected_row, 1).text(),
-            'cep': self.client_table.item(selected_row, 2).text(),
+            'Nome': self.client_table.item(selected_row, 1).text(),
+            'Cep': self.client_table.item(selected_row, 2).text(),
             'endereco': self.client_table.item(selected_row, 3).text(),
-            'cidade': self.client_table.item(selected_row, 4).text(),
-            'estado': self.client_table.item(selected_row, 5).text(),
-            'cpf_cnpj': self.client_table.item(selected_row, 6).text(),
-            'telefone': self.client_table.item(selected_row, 7).text()
+            'Número': self.client_table.item(selected_row, 4).text(),
+            'Cidade': self.client_table.item(selected_row, 5).text(),
+            'Estado': self.client_table.item(selected_row, 6).text(),
+            'Cpf_cnpj': self.client_table.item(selected_row, 7).text(),
+            'Telefone': self.client_table.item(selected_row, 8).text()
         }
             cliente_id = self.client_table.item(selected_row, 0).text()  
             equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
@@ -358,8 +364,9 @@ class ClienteUI(QWidget):
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
     
 
+
 class AdicionarEditarClienteDialog(QDialog):
-    def __init__(self, nome="", cep="", endereco="", cidade="", estado="", cpf_cnpj="", telefone=""):
+    def __init__(self, nome="", cep="", endereco="", numero="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar Cliente")
         self.setWindowIcon(QIcon("icon.png"))  # Adicione o ícone desejado
@@ -372,34 +379,45 @@ class AdicionarEditarClienteDialog(QDialog):
         self.nome = QLineEdit(nome)
         self.cep = QLineEdit(cep)
         self.endereco = QLineEdit(endereco)
+        self.numero = QLineEdit(numero)
         self.cidade = QLineEdit(cidade)
-        self.estado = QLineEdit(estado)
+        self.estado = QComboBox()
         self.cpf_cnpj = QLineEdit(cpf_cnpj)
         self.telefone = QLineEdit(telefone)
 
         # Estilo CSS para os campos de entrada
         style_sheet = """
-            QLineEdit {
+            QLineEdit, QComboBox {
                 border: 2px solid #3498db;
                 border-radius: 10px;
                 padding: 8px;
                 font-size: 14px;
             }
-            QLineEdit:focus {
+            QLineEdit:focus, QComboBox:focus {
                 border-color: #e74c3c;
             }
         """
         self.nome.setStyleSheet(style_sheet)
         self.cep.setStyleSheet(style_sheet)
         self.endereco.setStyleSheet(style_sheet)
+        self.numero.setStyleSheet(style_sheet)
         self.cidade.setStyleSheet(style_sheet)
         self.estado.setStyleSheet(style_sheet)
         self.cpf_cnpj.setStyleSheet(style_sheet)
         self.telefone.setStyleSheet(style_sheet)
 
+        # Adicionando siglas dos estados ao QComboBox
+        estados_brasileiros = [
+            "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+            "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+            "SP", "SE", "TO"
+        ]
+        self.estado.addItems(estados_brasileiros)
+
         form_layout.addRow(QLabel("Nome:"), self.nome)
         form_layout.addRow(QLabel("CEP:"), self.cep)
         form_layout.addRow(QLabel("Endereço:"), self.endereco)
+        form_layout.addRow(QLabel("Número:"), self.numero)
         form_layout.addRow(QLabel("Cidade:"), self.cidade)
         form_layout.addRow(QLabel("Estado:"), self.estado)
         form_layout.addRow(QLabel("CPF/CNPJ:"), self.cpf_cnpj)
@@ -413,7 +431,7 @@ class AdicionarEditarClienteDialog(QDialog):
         btn_cancelar = QPushButton("Cancelar")
         btn_salvar.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px; padding: 10px;")
         btn_cancelar.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
-        btn_salvar.clicked.connect(self.accept)
+        btn_salvar.clicked.connect(self.on_save)
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
         button_layout.addWidget(btn_cancelar)
@@ -421,6 +439,89 @@ class AdicionarEditarClienteDialog(QDialog):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
+
+        # Conectar sinal de edição de CEP ao método de preenchimento automático
+        self.cep.textChanged.connect(self.auto_fill_address)
+
+        # Aplicar máscara ao CPF/CNPJ
+        self.cpf_cnpj.setInputMask('000.000.000-00;_')
+        
+        self.cep.setInputMask('00000-000;_')
+
+        # Aplicar máscara ao telefone
+        self.telefone.setInputMask('(00)00000-0000;_')
+
+    def on_save(self):
+        if not self.validate_fields():
+            return
+
+        self.accept()
+
+    def validate_fields(self):
+        # Verificar se todos os campos estão preenchidos
+        if not all([self.nome.text(), self.cep.text(), self.endereco.text(), self.numero.text(), self.cidade.text(), self.estado.currentText(), self.cpf_cnpj.text(), self.telefone.text()]):
+            QMessageBox.warning(self, "Erro", "Todos os campos devem ser preenchidos.")
+            return False
+
+        # Verificar formato do CEP
+        if not re.match(r'^\d{5}-\d{3}$', self.cep.text()):
+            QMessageBox.warning(self, "Erro", "CEP inválido. Use o formato 00000-000.")
+            return False
+
+        # Verificar formato do CPF/CNPJ
+        if not (self.validate_cpf(self.cpf_cnpj.text()) or self.validate_cnpj(self.cpf_cnpj.text())):
+            QMessageBox.warning(self, "Erro", "CPF/CNPJ inválido.")
+            return False
+
+        return True
+
+    def validate_cpf(self, cpf):
+        cpf = re.sub(r'\D', '', cpf)
+        if len(cpf) != 11:
+            return False
+
+        def calculate_digit(digits):
+            s = sum(int(digit) * i for digit, i in zip(digits, range(len(digits)+1, 1, -1)))
+            d = 11 - s % 11
+            return str(d if d < 10 else 0)
+
+        first_nine_digits = cpf[:9]
+        cpf_10 = first_nine_digits + calculate_digit(first_nine_digits)
+        cpf_11 = cpf_10 + calculate_digit(cpf_10)
+
+        return cpf == cpf_11
+
+    def validate_cnpj(self, cnpj):
+        cnpj = re.sub(r'\D', '', cnpj)
+        if len(cnpj) != 14:
+            return False
+
+        def calculate_digit(digits):
+            s = sum(int(digit) * weight for digit, weight in zip(digits, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]))
+            d = 11 - s % 11
+            return str(d if d < 10 else 0)
+
+        first_twelve_digits = cnpj[:12]
+        cnpj_13 = first_twelve_digits + calculate_digit(first_twelve_digits)
+        cnpj_14 = cnpj_13 + calculate_digit(cnpj_13)
+
+        return cnpj == cnpj_14
+
+    def auto_fill_address(self):
+        cep = self.cep.text().replace("-", "")
+        if len(cep) == 8:
+            try:
+                response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
+                data = response.json()
+                if "erro" not in data:
+                    self.endereco.setText(data.get("logradouro", ""))
+                    self.cidade.setText(data.get("localidade", ""))
+                    estado = data.get("uf", "")
+                    index = self.estado.findText(estado)
+                    if index != -1:
+                        self.estado.setCurrentIndex(index)
+            except requests.exceptions.RequestException:
+                pass
 class DetalhesClienteDialog(QDialog):
     def __init__(self, cliente_info, equipamentos, user_type):
         super().__init__()
@@ -431,7 +532,7 @@ class DetalhesClienteDialog(QDialog):
         self.controller_equipamento = EquipamentoClienteController()  # Adicionando o atributo controller_equipamento
 
         self.setWindowTitle("Detalhes do Cliente")
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon("img/megamotores.png"))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)

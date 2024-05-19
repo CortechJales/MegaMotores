@@ -10,6 +10,7 @@ class ClienteController:
         nome TEXT,
         cep TEXT,
         endereco TEXT,
+        numero TEXT,
         cidade TEXT,
         estado TEXT,
         cpf_cnpj TEXT,
@@ -32,14 +33,14 @@ class ClienteController:
         data = (tipo,)
         return self.db.execute_query(query,data)
     
-    def CadastrarCliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone):
-        query = 'INSERT INTO cliente (nome, cep, endereco, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?,?, ?, ?, ?)'
-        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, True)
+    def CadastrarCliente(self, nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone):
+        query = 'INSERT INTO cliente (nome, cep, endereco,numero, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?, ?,?, ?, ?, ?)'
+        data = (nome, cep, endereco,numero, cidade, estado, cpf_cnpj, telefone, True)
         self.db.execute_query_no_return(query, data)
     
-    def EditarCliente(self, nome, cep, endereco, cidade, estado, cpf_cnpj, telefone,id):    
-        query = 'UPDATE cliente SET nome=?, cep=?, endereco=?, cidade=?, estado=?, cpf_cnpj=?, telefone=? WHERE id=?'
-        data = (nome, cep, endereco, cidade, estado, cpf_cnpj, telefone, id)
+    def EditarCliente(self, nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone,id):    
+        query = 'UPDATE cliente SET nome=?, cep=?, endereco=?, numero=?, cidade=?, estado=?, cpf_cnpj=?, telefone=? WHERE id=?'
+        data = (nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarCliente(self, id):    
