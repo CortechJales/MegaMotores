@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox,QRadioButton, QButtonGroup, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtCore import Qt,QRegExp
 from cliente.cliente_controller import ClienteController
 from PyQt5.QtGui import QIcon
 import re
@@ -365,11 +365,12 @@ class ClienteUI(QWidget):
     
 
 
+
 class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", numero="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar Cliente")
-        self.setWindowIcon(QIcon("icon.png"))  # Adicione o ícone desejado
+        self.setWindowIcon(QIcon("img/megamotores.png"))  # Adicione o ícone desejado
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)  # Adicione margens para espaçamento
@@ -420,6 +421,21 @@ class AdicionarEditarClienteDialog(QDialog):
         form_layout.addRow(QLabel("Número:"), self.numero)
         form_layout.addRow(QLabel("Cidade:"), self.cidade)
         form_layout.addRow(QLabel("Estado:"), self.estado)
+
+        # Adicionando botões de seleção para Pessoa Física e Jurídica
+        self.pessoa_fisica = QRadioButton("Pessoa Física (CPF)")
+        self.pessoa_juridica = QRadioButton("Pessoa Jurídica (CNPJ)")
+        self.pessoa_fisica.setChecked(True)  # Definindo Pessoa Física como padrão
+        self.tipo_pessoa_group = QButtonGroup()
+        self.tipo_pessoa_group.addButton(self.pessoa_fisica)
+        self.tipo_pessoa_group.addButton(self.pessoa_juridica)
+        self.tipo_pessoa_group.buttonClicked.connect(self.update_cpf_cnpj_mask)
+
+        tipo_pessoa_layout = QHBoxLayout()
+        tipo_pessoa_layout.addWidget(self.pessoa_fisica)
+        tipo_pessoa_layout.addWidget(self.pessoa_juridica)
+        form_layout.addRow(QLabel("Tipo de Pessoa:"), tipo_pessoa_layout)
+
         form_layout.addRow(QLabel("CPF/CNPJ:"), self.cpf_cnpj)
         form_layout.addRow(QLabel("Telefone:"), self.telefone)
 
@@ -429,7 +445,7 @@ class AdicionarEditarClienteDialog(QDialog):
         button_layout = QHBoxLayout()
         btn_salvar = QPushButton("Salvar")
         btn_cancelar = QPushButton("Cancelar")
-        btn_salvar.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px; padding: 10px;")
+        btn_salvar.setStyleSheet("background-color: #00a847; color: white; border-radius: 10px; padding: 10px;")
         btn_cancelar.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         btn_salvar.clicked.connect(self.on_save)
         btn_cancelar.clicked.connect(self.reject)
@@ -443,13 +459,18 @@ class AdicionarEditarClienteDialog(QDialog):
         # Conectar sinal de edição de CEP ao método de preenchimento automático
         self.cep.textChanged.connect(self.auto_fill_address)
 
-        # Aplicar máscara ao CPF/CNPJ
-        self.cpf_cnpj.setInputMask('000.000.000-00;_')
+        # Aplicar máscara inicial ao CPF/CNPJ e telefone
+        self.update_cpf_cnpj_mask()
+        self.telefone.setInputMask('(00)00000-0000;_')
         
         self.cep.setInputMask('00000-000;_')
 
-        # Aplicar máscara ao telefone
-        self.telefone.setInputMask('(00)00000-0000;_')
+        # Configurar estado inicial se fornecido
+        if estado:
+            self.estado.setCurrentText(estado)
+
+        # Verificar e aplicar a máscara correta para CPF/CNPJ ao inicializar
+        self.apply_initial_cpf_cnpj_mask(cpf_cnpj)
 
     def on_save(self):
         if not self.validate_fields():
@@ -516,12 +537,27 @@ class AdicionarEditarClienteDialog(QDialog):
                 if "erro" not in data:
                     self.endereco.setText(data.get("logradouro", ""))
                     self.cidade.setText(data.get("localidade", ""))
-                    estado = data.get("uf", "")
-                    index = self.estado.findText(estado)
-                    if index != -1:
-                        self.estado.setCurrentIndex(index)
-            except requests.exceptions.RequestException:
-                pass
+                    self.estado.setCurrentText(data.get("uf", ""))
+            except Exception as e:
+                print(f"Erro ao buscar endereço: {e}")
+
+    def update_cpf_cnpj_mask(self):
+        if self.pessoa_fisica.isChecked():
+            self.cpf_cnpj.setInputMask('000.000.000-00;_')
+        else:
+            self.cpf_cnpj.setInputMask('00.000.000/0000-00;_')
+
+    def apply_initial_cpf_cnpj_mask(self, cpf_cnpj):
+        cpf_cnpj = re.sub(r'\D', '', cpf_cnpj)
+        if len(cpf_cnpj) == 11:
+            self.pessoa_fisica.setChecked(True)
+        elif len(cpf_cnpj) == 14:
+            self.pessoa_juridica.setChecked(True)
+
+    # Aplicar a máscara apenas se o valor correspondente for um CPF ou CNPJ
+        if len(cpf_cnpj) in (11, 14):
+            self.update_cpf_cnpj_mask()  # Aplicar a máscara CPF ou CNPJ
+            self.cpf_cnpj.setText(cpf_cnpj)  # Adicionar o valor ao campo
 class DetalhesClienteDialog(QDialog):
     def __init__(self, cliente_info, equipamentos, user_type):
         super().__init__()
@@ -797,7 +833,7 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         button_layout = QHBoxLayout()
         btn_salvar = QPushButton("Salvar")
         btn_cancelar = QPushButton("Cancelar")
-        btn_salvar.setStyleSheet("background-color: #2ecc71; color: white; border-radius: 10px; padding: 10px;")
+        btn_salvar.setStyleSheet("background-color: #00a847; color: white; border-radius: 10px; padding: 10px;")
         btn_cancelar.setStyleSheet("background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         btn_salvar.clicked.connect(self.accept)
         btn_cancelar.clicked.connect(self.reject)
