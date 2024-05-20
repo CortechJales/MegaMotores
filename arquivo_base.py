@@ -2,31 +2,95 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget, QDialog, QMessageBox, QComboBox, QTableWidgetItem, QTableWidget
 from PyQt5.QtGui import QIcon, QFont
 import sqlite3
+import bcrypt
 
+# Função para verificar o login
+def verificar_login(username, password):
+    conn = sqlite3.connect('gerenciamento_ordens_servico.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS usuario (
+                      username TEXT PRIMARY KEY,
+                      password TEXT,
+                      tipo_usuario TEXT,
+                      ativo BOOLEAN
+                      )''')
+    cursor.execute("SELECT * FROM usuario WHERE username=?", (username,))
+    user_data = cursor.fetchone()
+    conn.close()
+    if user_data:
+        hashed_password = user_data[1]
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_password):
+            return user_data[2]  # Retorna o tipo de usuário (admin ou normal)
+    return None
+
+class LoginWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Login")
+        self.setGeometry(300, 300, 300, 150)
+
+        layout = QVBoxLayout()
+
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Usuário")
+        layout.addWidget(self.username_input)
+
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("Senha")
+        self.password_input.setEchoMode(QLineEdit.Password)
+        layout.addWidget(self.password_input)
+
+        btn_login = QPushButton("Login")
+        btn_login.clicked.connect(self.efetuar_login)
+        layout.addWidget(btn_login)
+
+        self.setLayout(layout)
+
+    def efetuar_login(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+        user_type = verificar_login(username, password)
+        if user_type:
+            self.user_type = user_type
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Aviso", "Credenciais inválidas!")
+    
 def conectar_banco():
     conn = sqlite3.connect('gerenciamento_ordens_servico.db')
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS clientes (
+    cursor.execute('''CREATE TABLE IF NOT EXISTS cliente (
                       id INTEGER PRIMARY KEY,
                       nome TEXT,
-                      cpf_cnpj TEXT,
+                      cep TEXT,
                       endereco TEXT,
-                      telefone TEXT
+                      cidade TEXT,
+                      estado TEXT,
+                      cpf_cnpj TEXT,
+                      telefone TEXT,
+                      ativo BOOLEAN
                       )''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS produtos (
+    cursor.execute('''CREATE TABLE IF NOT EXISTS equipamento_cliente (
                       id INTEGER PRIMARY KEY,
-                      nome TEXT,
                       descricao TEXT,
-                      codigo TEXT,
-                      preco REAL
+                      cliente_id INTEGER,
+                      ativo BOOLEAN,
+                      FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+                      )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS produto (
+                      id INTEGER PRIMARY KEY,
+                      descricao TEXT,
+                      valor REAL,
+                      ativo BOOLEAN
                       )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS ordens_servico (
                       id INTEGER PRIMARY KEY,
                       cliente_id INTEGER,
-                      data_inicio TEXT,
-                      data_final TEXT,
+                      data_inicio DATA,
+                      data_final DATA,
                       mao_de_obra REAL,
-                      valor_total REAL
+                      valor_total REAL,
+                      ativo BOOLEAN
                       )''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS itens_ordem (
                       id INTEGER PRIMARY KEY,
@@ -40,11 +104,11 @@ def conectar_banco():
     return conn, cursor
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, user_type):
         super().__init__()
         self.setWindowTitle("Sistema de Gerenciamento de Ordens de Serviço")
-        self.setGeometry(100, 100, 800, 600)
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setGeometry(0, 0, 1280, 720)
+        self.setWindowIcon(QIcon("img/logotipo.png"))
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -63,6 +127,17 @@ class MainWindow(QMainWindow):
         self.btn_ordens_servico = QPushButton("Gerenciar Ordens de Serviço")
         self.btn_ordens_servico.clicked.connect(self.abrir_janela_ordens_servico)
         self.layout.addWidget(self.btn_ordens_servico)
+
+        if user_type == 'adm':
+            self.btn_produtos = QPushButton("Gerenciar Produtos ADM")
+            self.btn_produtos.clicked.connect(self.abrir_janela_produtos)
+            self.layout.addWidget(self.btn_produtos)
+
+            self.btn_ordens_servico = QPushButton("Gerenciar Ordens de Serviço")
+            self.btn_ordens_servico.clicked.connect(self.abrir_janela_ordens_servico)
+            self.layout.addWidget(self.btn_ordens_servico)
+    
+  
 
     def abrir_janela_clientes(self):
         self.clientes_window = ClientesWindow()
@@ -86,8 +161,8 @@ class ClientesWindow(QWidget):
         self.setLayout(self.layout)
 
         self.table_clientes = QTableWidget()
-        self.table_clientes.setColumnCount(5)
-        self.table_clientes.setHorizontalHeaderLabels(['ID', 'Nome', 'CPF/CNPJ', 'Endereço', 'Telefone'])
+        self.table_clientes.setColumnCount(8)
+        self.table_clientes.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço', 'Cidade','Estado', 'CPF/CNPJ', 'telefone'])
         self.layout.addWidget(self.table_clientes)
 
         self.btn_adicionar_cliente = QPushButton("Adicionar Cliente")
@@ -102,12 +177,46 @@ class ClientesWindow(QWidget):
         self.btn_excluir_cliente.clicked.connect(self.excluir_cliente)
         self.layout.addWidget(self.btn_excluir_cliente)
 
+        self.btn_inativar_cliente = QPushButton("Inativar Cliente")
+        self.btn_inativar_cliente.clicked.connect(self.inativar_cliente)
+        self.layout.addWidget(self.btn_inativar_cliente)
+
+        self.btn_carregar_todos_clientes = QPushButton("Carregar Todos Cliente")
+        self.btn_carregar_todos_clientes.clicked.connect(self.carregar_todos_clientes)
+        self.layout.addWidget(self.btn_carregar_todos_clientes)
+       
+        self.btn_carregar_clientes_ativos = QPushButton("Filtrar clientes ativos")
+        self.btn_carregar_clientes_ativos.clicked.connect(self.carregar_clientes)
+        self.layout.addWidget(self.btn_carregar_clientes_ativos)
+
+        self.btn_carregar_clientes_inativos = QPushButton("Filtrar clientes inativos")
+        self.btn_carregar_clientes_inativos.clicked.connect(self.carregar_clientes_inativos)
+        self.layout.addWidget(self.btn_carregar_clientes_inativos)
+
         self.conn, self.cursor = conectar_banco()
         self.carregar_clientes()
 
     def carregar_clientes(self):
         self.table_clientes.setRowCount(0)
-        self.cursor.execute("SELECT * FROM clientes")
+        self.cursor.execute("SELECT * FROM cliente WHERE ativo = ?", (True,))
+        clientes = self.cursor.fetchall()
+        for row_number, cliente in enumerate(clientes):
+            self.table_clientes.insertRow(row_number)
+            for column_number, data in enumerate(cliente):
+                self.table_clientes.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+
+    def carregar_todos_clientes(self):
+        self.table_clientes.setRowCount(0)
+        self.cursor.execute("SELECT * FROM cliente")
+        clientes = self.cursor.fetchall()
+        for row_number, cliente in enumerate(clientes):
+            self.table_clientes.insertRow(row_number)
+            for column_number, data in enumerate(cliente):
+                self.table_clientes.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+            
+    def carregar_clientes_inativos(self):
+        self.table_clientes.setRowCount(0)
+        self.cursor.execute("SELECT * FROM cliente WHERE ativo = ?", (False,))
         clientes = self.cursor.fetchall()
         for row_number, cliente in enumerate(clientes):
             self.table_clientes.insertRow(row_number)
@@ -118,10 +227,14 @@ class ClientesWindow(QWidget):
         dialog = AdicionarEditarClienteDialog()
         if dialog.exec_():
             nome = dialog.nome.text()
+            cep = dialog.cep.text()            
+            endereco = dialog.endereco.text()            
+            cidade = dialog.cidade.text()
+            estado = dialog.estado.text()
             cpf_cnpj = dialog.cpf_cnpj.text()
-            endereco = dialog.endereco.text()
             telefone = dialog.telefone.text()
-            self.cursor.execute("INSERT INTO clientes (nome, cpf_cnpj, endereco, telefone) VALUES (?, ?, ?, ?)", (nome, cpf_cnpj, endereco, telefone))
+            
+            self.cursor.execute("INSERT INTO cliente (nome, cep, endereco, cidade, estado, cpf_cnpj,telefone,ativo) VALUES (?, ?, ?, ?,?, ?, ?, ?)", (nome,cep, endereco, cidade, estado, cpf_cnpj, telefone, True))
             self.conn.commit()
             self.carregar_clientes()
 
@@ -130,16 +243,22 @@ class ClientesWindow(QWidget):
         if selected_row != -1:
             id = self.table_clientes.item(selected_row, 0).text()
             nome = self.table_clientes.item(selected_row, 1).text()
-            cpf_cnpj = self.table_clientes.item(selected_row, 2).text()
+            cep = self.table_clientes.item(selected_row, 2).text()
             endereco = self.table_clientes.item(selected_row, 3).text()
-            telefone = self.table_clientes.item(selected_row, 4).text()
-            dialog = AdicionarEditarClienteDialog(nome, cpf_cnpj, endereco, telefone)
+            cidade = self.table_clientes.item(selected_row, 4).text()
+            estado = self.table_clientes.item(selected_row, 5).text()
+            cpf_cnpj = self.table_clientes.item(selected_row, 6).text()            
+            telefone = self.table_clientes.item(selected_row, 7).text()
+            dialog = AdicionarEditarClienteDialog(nome, cep, endereco, cidade, estado, cpf_cnpj,telefone)
             if dialog.exec_():
                 novo_nome = dialog.nome.text()
-                novo_cpf_cnpj = dialog.cpf_cnpj.text()
+                novo_cep = dialog.cep.text()
                 novo_endereco = dialog.endereco.text()
+                novo_cidade = dialog.cidade.text()
+                novo_estado = dialog.estado.text()
+                novo_cpf_cnpj = dialog.cpf_cnpj.text()
                 novo_telefone = dialog.telefone.text()
-                self.cursor.execute("UPDATE clientes SET nome=?, cpf_cnpj=?, endereco=?, telefone=? WHERE id=?", (novo_nome, novo_cpf_cnpj, novo_endereco, novo_telefone, id))
+                self.cursor.execute("UPDATE cliente SET nome=?, cep=?, endereco=?, cidade=?, estado=?, cpf_cnpj=?,telefone=? WHERE id=?", (novo_nome, novo_cep, novo_endereco, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone, id))
                 self.conn.commit()
                 self.carregar_clientes()
         else:
@@ -151,14 +270,26 @@ class ClientesWindow(QWidget):
             id = self.table_clientes.item(selected_row, 0).text()
             resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o cliente ID {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
-                self.cursor.execute("DELETE FROM clientes WHERE id=?", (id,))
+                self.cursor.execute("DELETE FROM cliente WHERE id=?", (id,))
                 self.conn.commit()
                 self.carregar_clientes()
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")
+    
+    def inativar_cliente(self):
+        selected_row = self.table_clientes.currentRow()
+        if selected_row != -1:
+            id = self.table_clientes.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o cliente código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.cursor.execute("UPDATE cliente SET ativo=? WHERE id=?", (False, id))
+                self.conn.commit()
+                self.carregar_clientes()
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para excluir.")    
 
 class AdicionarEditarClienteDialog(QDialog):
-    def __init__(self, nome="", cpf_cnpj="", endereco="", telefone=""):
+    def __init__(self, nome="",cep="",endereco="",cidade="",estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar/Editar Cliente")
 
@@ -168,13 +299,25 @@ class AdicionarEditarClienteDialog(QDialog):
         self.nome.setPlaceholderText("Nome")
         layout.addWidget(self.nome)
 
-        self.cpf_cnpj = QLineEdit(cpf_cnpj)
-        self.cpf_cnpj.setPlaceholderText("CPF/CNPJ")
-        layout.addWidget(self.cpf_cnpj)
-
+        self.cep = QLineEdit(cep)
+        self.cep.setPlaceholderText("CEP")
+        layout.addWidget(self.cep)
+        
         self.endereco = QLineEdit(endereco)
         self.endereco.setPlaceholderText("Endereço")
         layout.addWidget(self.endereco)
+
+        self.cidade = QLineEdit(cidade)
+        self.cidade.setPlaceholderText("Cidade")
+        layout.addWidget(self.cidade)
+
+        self.estado = QLineEdit(estado)
+        self.estado.setPlaceholderText("Estado")
+        layout.addWidget(self.estado)
+
+        self.cpf_cnpj = QLineEdit(cpf_cnpj)
+        self.cpf_cnpj.setPlaceholderText("CPF/CNPJ")
+        layout.addWidget(self.cpf_cnpj);        
 
         self.telefone = QLineEdit(telefone)
         self.telefone.setPlaceholderText("Telefone")
@@ -196,8 +339,8 @@ class ProdutosWindow(QWidget):
         self.setLayout(self.layout)
 
         self.table_produtos = QTableWidget()
-        self.table_produtos.setColumnCount(5)
-        self.table_produtos.setHorizontalHeaderLabels(['ID', 'Nome', 'Descrição', 'Código', 'Preço'])
+        self.table_produtos.setColumnCount(3)
+        self.table_produtos.setHorizontalHeaderLabels(['Código', 'Descrição', 'Valor'])
         self.layout.addWidget(self.table_produtos)
 
         self.btn_adicionar_produto = QPushButton("Adicionar Produto")
@@ -212,12 +355,47 @@ class ProdutosWindow(QWidget):
         self.btn_excluir_produto.clicked.connect(self.excluir_produto)
         self.layout.addWidget(self.btn_excluir_produto)
 
+        self.btn_inativar_produto = QPushButton("Inativar Produto")
+        self.btn_inativar_produto.clicked.connect(self.inativar_produto)
+        self.layout.addWidget(self.btn_inativar_produto)
+
+        self.btn_carregar_todos_produtos = QPushButton("Carregar Todos Produtos")
+        self.btn_carregar_todos_produtos.clicked.connect(self.carregar_todos_produtos)
+        self.layout.addWidget(self.btn_carregar_todos_produtos)
+       
+        self.btn_carregar_produtos_ativos = QPushButton("Filtrar Produtos ativos")
+        self.btn_carregar_produtos_ativos.clicked.connect(self.carregar_produtos)
+        self.layout.addWidget(self.btn_carregar_produtos_ativos)
+
+        self.btn_carregar_produtos_inativos = QPushButton("Filtrar Produtos inativos")
+        self.btn_carregar_produtos_inativos.clicked.connect(self.carregar_produtos_inativos)
+        self.layout.addWidget(self.btn_carregar_produtos_inativos)
+
         self.conn, self.cursor = conectar_banco()
         self.carregar_produtos()
 
+   
+    def carregar_todos_produtos(self):
+        self.table_produtos.setRowCount(0)
+        self.cursor.execute("SELECT * FROM produto")
+        produtos = self.cursor.fetchall()
+        for row_number, produto in enumerate(produtos):
+            self.table_produtos.insertRow(row_number)
+            for column_number, data in enumerate(produto):
+                self.table_produtos.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+            
+    def carregar_produtos_inativos(self):
+        self.table_produtos.setRowCount(0)
+        self.cursor.execute("SELECT * FROM produto WHERE ativo = ?", (False,))
+        produtos = self.cursor.fetchall()
+        for row_number, produto in enumerate(produtos):
+            self.table_produtos.insertRow(row_number)
+            for column_number, data in enumerate(produto):
+                self.table_produtos.setItem(row_number, column_number, QTableWidgetItem(str(data)))
+
     def carregar_produtos(self):
         self.table_produtos.setRowCount(0)
-        self.cursor.execute("SELECT * FROM produtos")
+        self.cursor.execute("SELECT * FROM produto WHERE ativo = ?", (True,))
         produtos = self.cursor.fetchall()
         for row_number, produto in enumerate(produtos):
             self.table_produtos.insertRow(row_number)
@@ -225,31 +403,26 @@ class ProdutosWindow(QWidget):
                 self.table_produtos.setItem(row_number, column_number, QTableWidgetItem(str(data)))
 
     def adicionar_produto(self):
-        dialog = AdicionarEditarProdutoDialog()
+        dialog = AdicionarProdutoDialog()
         if dialog.exec_():
-            nome = dialog.nome.text()
             descricao = dialog.descricao.text()
             codigo = dialog.codigo.text()
-            preco = dialog.preco.text()
-            self.cursor.execute("INSERT INTO produtos (nome, descricao, codigo, preco) VALUES (?, ?, ?, ?)", (nome, descricao, codigo, preco))
+            valor = dialog.valor.text()
+            self.cursor.execute("INSERT INTO produto (id, descricao,  valor, ativo) VALUES (?, ?, ?,?)", (codigo, descricao, valor, True))
             self.conn.commit()
             self.carregar_produtos()
 
     def editar_produto(self):
         selected_row = self.table_produtos.currentRow()
         if selected_row != -1:
-            id = self.table_produtos.item(selected_row, 0).text()
-            nome = self.table_produtos.item(selected_row, 1).text()
-            descricao = self.table_produtos.item(selected_row, 2).text()
-            codigo = self.table_produtos.item(selected_row, 3).text()
-            preco = self.table_produtos.item(selected_row, 4).text()
-            dialog = AdicionarEditarProdutoDialog(nome, descricao, codigo, preco)
+            codigo = self.table_produtos.item(selected_row, 0).text()
+            descricao = self.table_produtos.item(selected_row, 1).text()
+            valor = self.table_produtos.item(selected_row, 2).text()
+            dialog = EditarProdutoDialog(codigo,descricao,valor)
             if dialog.exec_():
-                novo_nome = dialog.nome.text()
                 nova_descricao = dialog.descricao.text()
-                novo_codigo = dialog.codigo.text()
-                novo_preco = dialog.preco.text()
-                self.cursor.execute("UPDATE produtos SET nome=?, descricao=?, codigo=?, preco=? WHERE id=?", (novo_nome, nova_descricao, novo_codigo, novo_preco, id))
+                novo_valor = dialog.valor.text()
+                self.cursor.execute("UPDATE produto SET  descricao=?, valor=? WHERE id=?", (nova_descricao, novo_valor, codigo))
                 self.conn.commit()
                 self.carregar_produtos()
         else:
@@ -258,37 +431,44 @@ class ProdutosWindow(QWidget):
     def excluir_produto(self):
         selected_row = self.table_produtos.currentRow()
         if selected_row != -1:
-            id = self.table_produtos.item(selected_row, 0).text()
+            codigo = self.table_produtos.item(selected_row, 0).text()
             resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o produto ID {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
-                self.cursor.execute("DELETE FROM produtos WHERE id=?", (id,))
+                self.cursor.execute("DELETE FROM produto WHERE id=?", (codigo))
                 self.conn.commit()
                 self.carregar_produtos()
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um produto para excluir.")
 
-class AdicionarEditarProdutoDialog(QDialog):
-    def __init__(self, nome="", descricao="", codigo="", preco=""):
+    def inativar_produto(self):
+        selected_row = self.table_produtos.currentRow()
+        if selected_row != -1:
+            id = self.table_produtos.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o produto código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.cursor.execute("UPDATE produto SET ativo=? WHERE id=?", (False, id))
+                self.conn.commit()
+                self.carregar_produtos()
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um produto para excluir.")    
+class AdicionarProdutoDialog(QDialog):
+    def __init__(self,codigo="", descricao="", valor=""):
         super().__init__()
         self.setWindowTitle("Adicionar/Editar Produto")
 
         layout = QVBoxLayout()
 
-        self.nome = QLineEdit(nome)
-        self.nome.setPlaceholderText("Nome")
-        layout.addWidget(self.nome)
+        self.codigo = QLineEdit(codigo)
+        self.codigo.setPlaceholderText("Código")
+        layout.addWidget(self.codigo)
 
         self.descricao = QLineEdit(descricao)
         self.descricao.setPlaceholderText("Descrição")
         layout.addWidget(self.descricao)
 
-        self.codigo = QLineEdit(codigo)
-        self.codigo.setPlaceholderText("Código")
-        layout.addWidget(self.codigo)
-
-        self.preco = QLineEdit(preco)
-        self.preco.setPlaceholderText("Preço")
-        layout.addWidget(self.preco)
+        self.valor = QLineEdit(valor)
+        self.valor.setPlaceholderText("Valor")
+        layout.addWidget(self.valor)
 
         btn_salvar = QPushButton("Salvar")
         btn_salvar.clicked.connect(self.accept)
@@ -296,6 +476,31 @@ class AdicionarEditarProdutoDialog(QDialog):
 
         self.setLayout(layout)
 
+class EditarProdutoDialog(QDialog):
+    def __init__(self,codigo="", descricao="", valor=""):
+        super().__init__()
+        self.setWindowTitle("Adicionar/Editar Produto")
+
+        layout = QVBoxLayout()
+
+        self.codigo = QLineEdit(codigo)
+        self.codigo.setPlaceholderText("Código")
+        self.codigo.setReadOnly(True)
+        layout.addWidget(self.codigo)
+
+        self.descricao = QLineEdit(descricao)
+        self.descricao.setPlaceholderText("Descrição")
+        layout.addWidget(self.descricao)
+
+        self.valor = QLineEdit(valor)
+        self.valor.setPlaceholderText("Valor")
+        layout.addWidget(self.valor)
+
+        btn_salvar = QPushButton("Salvar")
+        btn_salvar.clicked.connect(self.accept)
+        layout.addWidget(btn_salvar)
+
+        self.setLayout(layout)
 class OrdensServicoWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -327,7 +532,7 @@ class OrdensServicoWindow(QWidget):
 
     def carregar_ordens_servico(self):
         self.table_ordens_servico.setRowCount(0)
-        self.cursor.execute("SELECT ordens_servico.id, clientes.nome, ordens_servico.data_inicio, ordens_servico.data_final, ordens_servico.mao_de_obra, ordens_servico.valor_total FROM ordens_servico JOIN clientes ON ordens_servico.cliente_id = clientes.id")
+        self.cursor.execute("SELECT ordens_servico.id, cliente.nome, ordens_servico.data_inicio, ordens_servico.data_final, ordens_servico.mao_de_obra, ordens_servico.valor_total FROM ordens_servico JOIN cliente ON ordens_servico.cliente_id = cliente.id")
         ordens_servico = self.cursor.fetchall()
         for row_number, ordem_servico in enumerate(ordens_servico):
             self.table_ordens_servico.insertRow(row_number)
@@ -372,7 +577,7 @@ class AdicionarEditarOrdemServicoDialog(QDialog):
 
         self.combo_clientes = QComboBox()
         self.combo_clientes.addItem("Selecione um cliente")
-        self.cursor.execute("SELECT id, nome FROM clientes")
+        self.cursor.execute("SELECT id, nome FROM cliente")
         clientes = self.cursor.fetchall()
         for cliente in clientes:
             self.combo_clientes.addItem(f"{cliente[0]} - {cliente[1]}")
@@ -416,7 +621,7 @@ class AdicionarEditarOrdemServicoDialog(QDialog):
         self.data_final.setText(ordem_servico[4])
         self.mao_de_obra.setText(str(ordem_servico[5]))
 
-        self.cursor.execute("SELECT produtos.nome, itens_ordem.quantidade, produtos.preco FROM itens_ordem JOIN produtos ON itens_ordem.produto_id = produtos.id WHERE itens_ordem.ordem_id=?", (id,))
+        self.cursor.execute("SELECT produto.nome, itens_ordem.quantidade, produto.preco FROM itens_ordem JOIN produto ON itens_ordem.produto_id = produto.id WHERE itens_ordem.ordem_id=?", (id,))
         itens_ordem = self.cursor.fetchall()
         self.table_itens_ordem.setRowCount(0)
         for row_number, item in enumerate(itens_ordem):
@@ -465,7 +670,7 @@ class AdicionarItemDialog(QDialog):
 
         self.combo_produtos = QComboBox()
         self.combo_produtos.addItem("Selecione um produto")
-        cursor.execute("SELECT nome FROM produtos")
+        cursor.execute("SELECT nome FROM produto")
         produtos = cursor.fetchall()
         for produto in produtos:
             self.combo_produtos.addItem(produto[0])
@@ -487,6 +692,9 @@ class AdicionarItemDialog(QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+    login_window = LoginWindow()
+    if login_window.exec_() == QDialog.Accepted:
+        user_type = login_window.user_type
+        window = MainWindow(user_type)
+        window.show()
+        sys.exit(app.exec_())

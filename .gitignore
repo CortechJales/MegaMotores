@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ignora os arquivos com extensões 
+.gitignore
+# ignora quaisquer diretórios chamados "metadata"
+.metadata/
+.recommenders/
+fotos_notinhas/
+
 # C extensions
 *.so
 
