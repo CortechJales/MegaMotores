@@ -227,11 +227,13 @@ class ProdutoUI(QWidget):
                     self.product_table.setItem(row_number, column_number, item)
 
     def add_produto(self, id, descricao, valor):
-        self.controller.CadastrarProduto( descricao, valor, id)
+        valor_numerico = valor.replace("R$ ", "")  # Remove o "R$" antes de salvar
+        self.controller.CadastrarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
-    def edit_produto(self, descricao,valor, id):
-        self.controller.EditarProduto( descricao,valor, id)
+    def edit_produto(self, descricao, valor, id):
+        valor_numerico = valor.replace("R$ ", "")  # Remove o "R$" antes de salvar
+        self.controller.EditarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
 
@@ -327,7 +329,7 @@ class AdicionarProdutoDialog(QDialog):
         self.valor = QDoubleSpinBox()
         self.valor.setDecimals(2)
         self.valor.setMaximum(9999.99)    # Definindo duas casas decimais
-        
+        self.valor.setPrefix("R$ ")
 
         # Estilo CSS para os campos de entrada
         style_sheet = """

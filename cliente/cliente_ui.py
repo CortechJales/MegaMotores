@@ -357,7 +357,12 @@ class ClienteUI(QWidget):
             cliente_id = self.client_table.item(selected_row, 0).text()  
             equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
 
-            dialog = DetalhesClienteDialog(cliente_info, equipamentos,self.user_type)
+            dialog = DetalhesClienteDialog(cliente_info, equipamentos, self.user_type)
+        
+        # Definindo o tamanho mínimo e máximo da janela
+            dialog.setMinimumSize(600, 400)  # Defina o tamanho mínimo desejado
+            dialog.setMaximumSize(800, 600)  # Defina o tamanho máximo desejado
+
             dialog.exec_()
 
         else:
@@ -566,7 +571,7 @@ class DetalhesClienteDialog(QDialog):
         self.equipamentos = equipamentos
         self.user_type = user_type
         self.controller_equipamento = EquipamentoClienteController()  # Adicionando o atributo controller_equipamento
-
+    
         self.setWindowTitle("Detalhes do Cliente")
         self.setWindowIcon(QIcon("img/megamotores.png"))
 
@@ -615,8 +620,8 @@ class DetalhesClienteDialog(QDialog):
                 color: black;
             }
         """)
-        self.equip_table.setColumnCount(2)  # Adicionando uma coluna extra para a ID do equipamento
-        self.equip_table.setHorizontalHeaderLabels(['Código', 'Descrição'])
+        self.equip_table.setColumnCount(8)  # Adicionando uma coluna extra para a ID do equipamento
+        self.equip_table.setHorizontalHeaderLabels(['Código', 'Modelo','RPM','Polos','Fases','Tensão','marca','Defeito'])
         self.equip_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.equip_table.verticalHeader().setVisible(False)
         cliente_id = self.cliente_info['Código']
@@ -683,25 +688,26 @@ class DetalhesClienteDialog(QDialog):
             action_add.triggered.connect(self.show_add_equipamento_dialog)
             action_edit.triggered.connect(self.show_edit_equipamento_dialog)
             action_inactive.triggered.connect(self.inactive_equipamento)
-
+        
+        self.equip_table.doubleClicked.connect(self.show_equipamento_message)
         self.setLayout(layout)
 
     
     # Métodos para manipulação de equipamentos...
     
-    def add_equipamento(self,descricao):
+    def add_equipamento(self,modelo,rpm,polos,fases,tensao,marca_id,defeito):
        # Adiciona o novo equipamento à lista de equipamentos
        
         cliente_id = self.cliente_info['Código']
         
         # Obtém o ID do cliente
-        self.controller_equipamento.CadastrarEquipamentoCliente(descricao,cliente_id)
+        self.controller_equipamento.CadastrarEquipamentoCliente(modelo,rpm,polos,fases,tensao,marca_id,defeito,cliente_id)
         self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
         # Atualiza a tabela de equipamentos
         self.update_equip_table()
    
-    def edit_equipamento(self, descricao, id):
-        self.controller_equipamento.EditarequipamentoCliente( descricao,id)
+    def edit_equipamento(self,modelo,rpm,polos,fases,tensao,marca_id,defeito, id):
+        self.controller_equipamento.EditarequipamentoCliente(modelo,rpm,polos,fases,tensao,marca_id,defeito,id)
         cliente_id = self.cliente_info['Código']
         self.equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
         self.update_equip_table()  # Atualizar a tabela após adicionar clientes
@@ -773,46 +779,97 @@ class DetalhesClienteDialog(QDialog):
 
         # Adiciona os equipamentos atualizados à tabela
         for row, equip in enumerate(self.equipamentos):
-            id_item = QTableWidgetItem(str(equip['id']))  # Adicionando a ID do equipamento
-            descricao_item = QTableWidgetItem(equip['descricao'])
-            self.equip_table.setItem(row, 0, id_item)  # Adicionando a ID na primeira coluna
-            self.equip_table.setItem(row, 1, descricao_item)
+            id_item = QTableWidgetItem(str(equip['id'])) 
+
+            modelo_item = QTableWidgetItem(equip['modelo'])
+            
+            rpm_item = QTableWidgetItem(equip['rpm'])
+            
+            polos_item = QTableWidgetItem(equip['polos'])
+            
+            fases_item = QTableWidgetItem(equip['fases'])
+            
+            tensao_item = QTableWidgetItem(equip['tensao'])
+            
+            marca_item = QTableWidgetItem(equip['marca_id'])
+            
+            defeito_item = QTableWidgetItem(equip['defeito'])
+            self.equip_table.setItem(row, 0, id_item)
+            self.equip_table.setItem(row, 1, modelo_item) 
+            self.equip_table.setItem(row, 2, rpm_item)
+            self.equip_table.setItem(row, 3, polos_item)
+            self.equip_table.setItem(row, 4, fases_item)
+            self.equip_table.setItem(row, 5, tensao_item)
+            self.equip_table.setItem(row, 6, marca_item)
+            self.equip_table.setItem(row, 7, defeito_item)
+            
 
     def show_add_equipamento_dialog(self):
         dialog = AdicionarEditarEquipamentoDialog()
         if dialog.exec_():
-            descricao = dialog.descricao.text()
-            self.add_equipamento(descricao)
+            modelo = dialog.modelo.text()
+            
+            rpm = dialog.rpm.text()
+            
+            polos = dialog.polos.text()
+            
+            fases = dialog.fases.text()
+            
+            tensao = dialog.tensao.text()
+            
+            marca_id = dialog.marca_id.text()
+            
+            defeito = dialog.defeito.text()
+
+    
+            self.add_equipamento(modelo,rpm,polos,fases,tensao,marca_id,defeito)
     
     def show_edit_equipamento_dialog(self):
         selected_row = self.equip_table.currentRow()
         if selected_row != -1:
             id = self.equip_table.item(selected_row, 0).text()
-            descricao = self.equip_table.item(selected_row, 1).text()
+            modelo = self.equip_table.item(selected_row, 1).text()
+            rpm = self.equip_table.item(selected_row, 2).text()
+            polos = self.equip_table.item(selected_row, 3).text()
+            fases = self.equip_table.item(selected_row, 4).text()
+            tensao = self.equip_table.item(selected_row, 5).text()
+            marca_id = self.equip_table.item(selected_row, 6).text()
+            defeito = self.equip_table.item(selected_row, 7).text()
             
-            dialog = AdicionarEditarEquipamentoDialog(descricao)
+            
+            
+            dialog = AdicionarEditarEquipamentoDialog(modelo,rpm,polos,fases,tensao,marca_id,defeito)
             if dialog.exec_():
-                novo_descricao = dialog.descricao.text()
+                novo_modelo = dialog.modelo.text()
+                novo_rpm = dialog.rpm.text()
+                novo_polos = dialog.polos.text()
+                novo_fases = dialog.fases.text()
+                novo_tensao = dialog.tensao.text()
+                novo_marca_id = dialog.marca_id.text()
+                novo_defeito = dialog.defeito.text()
                 
-                self.edit_equipamento(novo_descricao,id)
+                self.edit_equipamento(novo_modelo, novo_rpm,novo_polos,novo_fases,novo_tensao,novo_marca_id,novo_defeito,id)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para editar.")
    
-    
+    def show_equipamento_message(self, index):
+        # Obtendo o texto do item clicado na tabela de equipamentos
+        equipamento_info = self.equip_table.item(index.row(), index.column()).text()
+
+        # Exibindo uma mensagem com o conteúdo do campo clicado
+        QMessageBox.information(self, "Detalhes do Equipamento", equipamento_info)
+   
        
 class AdicionarEditarEquipamentoDialog(QDialog):
-    def __init__(self, descricao=""):
+    def __init__(self, modelo="",rpm="",polos="",fases="",tensao="",marca_id="",defeito=""):
         super().__init__()
         self.setWindowTitle("Adicionar Equipamento")
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon("img/megamotores.png"))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
 
         form_layout = QFormLayout()
-
-        
-        self.descricao = QLineEdit(descricao)
 
         style_sheet = """
             QLineEdit {
@@ -825,8 +882,30 @@ class AdicionarEditarEquipamentoDialog(QDialog):
                 border-color: #e74c3c;
             }
         """
-        self.descricao.setStyleSheet(style_sheet)
-        form_layout.addRow(QLabel("Descrição:"), self.descricao)
+        # Novos campos adicionados
+        self.modelo = QLineEdit(modelo)
+        self.rpm = QLineEdit(rpm)
+        self.polos = QLineEdit(polos)
+        self.fases = QLineEdit(fases)
+        self.tensao = QLineEdit(tensao)
+        self.marca_id = QLineEdit(marca_id)
+        self.defeito = QLineEdit(defeito)
+        
+        self.modelo.setStyleSheet(style_sheet)
+        self.rpm.setStyleSheet(style_sheet)
+        self.polos.setStyleSheet(style_sheet)
+        self.fases.setStyleSheet(style_sheet)
+        self.tensao.setStyleSheet(style_sheet)
+        self.marca_id.setStyleSheet(style_sheet)
+        self.defeito.setStyleSheet(style_sheet)
+
+        form_layout.addRow(QLabel("Modelo:"), self.modelo)
+        form_layout.addRow(QLabel("RPM:"), self.rpm)
+        form_layout.addRow(QLabel("Polos:"), self.polos)
+        form_layout.addRow(QLabel("Fases:"), self.fases)
+        form_layout.addRow(QLabel("Tensão:"), self.tensao)
+        form_layout.addRow(QLabel("Marca ID:"), self.marca_id) 
+        form_layout.addRow(QLabel("Defeito:"), self.defeito)
 
         layout.addLayout(form_layout)
 
@@ -841,9 +920,7 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         button_layout.addWidget(btn_cancelar)
 
         layout.addLayout(button_layout)
-
         self.setLayout(layout)
-
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

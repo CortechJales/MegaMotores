@@ -57,14 +57,14 @@ class CadastroUsuario(QMainWindow):
             return
 
         # Gerar o hash da senha
-        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        senha_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         conn = sqlite3.connect('database/gerenciamento_ordens_servico.db')
         cursor = conn.cursor()
 
         try:
             cursor.execute("INSERT INTO usuario (username, password, tipo_usuario, ativo) VALUES (?, ?, ?, 1)",
-                           (username, password_hash, tipo_usuario))
+                           (username, senha_hash, tipo_usuario))
             conn.commit()
             QMessageBox.information(self, "Sucesso", "Usuário cadastrado com sucesso.")
             self.username_input.clear()
