@@ -18,6 +18,17 @@ class ProdutoController:
         query = 'SELECT * FROM produto'
         return self.db.execute_query(query)
     
+    def ValidarProdutoCadastrado(self, id):
+        query = 'SELECT descricao FROM produto WHERE id=?'
+        data = (id,)
+        result = self.db.execute_query(query, data)
+
+    # Se houver algum resultado, significa que o produto já está cadastrado
+        if result:
+            return True
+        else:
+            return False
+    
     def FiltrarProduto(self,tipo):
         query = 'SELECT * FROM produto where ativo=?'
         data = (tipo,)
