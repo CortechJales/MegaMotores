@@ -1,11 +1,12 @@
 from PyQt5.QtWidgets import QWidget, QDialog,QFormLayout, QMessageBox, QCheckBox,QRadioButton, QButtonGroup, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt,QRegExp
+from cliente.equipamento_cliente_controller import EquipamentoClienteController
 from cliente.cliente_controller import ClienteController
+from marca.marca_controller import MarcaController
 from PyQt5.QtGui import QIcon
 import re
 import requests
 
-from cliente.equipamento_cliente_controller import EquipamentoClienteController
 
 class ClienteUI(QWidget):
     def __init__(self,user_type):
@@ -360,8 +361,8 @@ class ClienteUI(QWidget):
             dialog = DetalhesClienteDialog(cliente_info, equipamentos, self.user_type)
         
         # Definindo o tamanho mínimo e máximo da janela
-            dialog.setMinimumSize(600, 400)  # Defina o tamanho mínimo desejado
-            dialog.setMaximumSize(800, 600)  # Defina o tamanho máximo desejado
+            dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
+            dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
 
             dialog.exec_()
 
@@ -571,7 +572,8 @@ class DetalhesClienteDialog(QDialog):
         self.equipamentos = equipamentos
         self.user_type = user_type
         self.controller_equipamento = EquipamentoClienteController()  # Adicionando o atributo controller_equipamento
-    
+        
+        self.controller_marca = MarcaController()
         self.setWindowTitle("Detalhes do Cliente")
         self.setWindowIcon(QIcon("img/megamotores.png"))
 
@@ -805,7 +807,9 @@ class DetalhesClienteDialog(QDialog):
             
 
     def show_add_equipamento_dialog(self):
-        dialog = AdicionarEditarEquipamentoDialog()
+        marcas_disponiveis = self.controller_marca.BuscarMarca()
+        dialog = AdicionarEditarEquipamentoDialog(marcas_disponiveis=marcas_disponiveis)
+       
         if dialog.exec_():
             modelo = dialog.modelo.text()
             
@@ -817,11 +821,11 @@ class DetalhesClienteDialog(QDialog):
             
             tensao = dialog.tensao.text()
             
-            marca_id = dialog.marca_id.text()
+            marca_id = dialog.combo_marca.currentText().split(' - ')[0]
             
             defeito = dialog.defeito.text()
 
-    
+
             self.add_equipamento(modelo,rpm,polos,fases,tensao,marca_id,defeito)
     
     def show_edit_equipamento_dialog(self):
@@ -835,60 +839,62 @@ class DetalhesClienteDialog(QDialog):
             tensao = self.equip_table.item(selected_row, 5).text()
             marca_id = self.equip_table.item(selected_row, 6).text()
             defeito = self.equip_table.item(selected_row, 7).text()
-            
-            
-            
-            dialog = AdicionarEditarEquipamentoDialog(modelo,rpm,polos,fases,tensao,marca_id,defeito)
+
+            # Obtenha a lista de todas as marcas disponíveis
+            marcas_disponiveis = self.controller_marca.BuscarMarca()
+
+            # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
+            dialog = AdicionarEditarEquipamentoDialog(modelo, rpm, polos, fases, tensao, marca_id, defeito, marcas_disponiveis)
             if dialog.exec_():
                 novo_modelo = dialog.modelo.text()
                 novo_rpm = dialog.rpm.text()
                 novo_polos = dialog.polos.text()
                 novo_fases = dialog.fases.text()
                 novo_tensao = dialog.tensao.text()
-                novo_marca_id = dialog.marca_id.text()
+                novo_marca_id = dialog.combo_marca.currentText().split(' - ')[0]
                 novo_defeito = dialog.defeito.text()
-                
-                self.edit_equipamento(novo_modelo, novo_rpm,novo_polos,novo_fases,novo_tensao,novo_marca_id,novo_defeito,id)
+            
+                self.edit_equipamento(novo_modelo, novo_rpm, novo_polos, novo_fases, novo_tensao, novo_marca_id, novo_defeito, id)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para editar.")
    
     def show_equipamento_message(self, index):
-        # Obtendo o texto do item clicado na tabela de equipamentos
+            # Obtendo o texto do item clicado na tabela de equipamentos
         equipamento_info = self.equip_table.item(index.row(), index.column()).text()
 
-        # Exibindo uma mensagem com o conteúdo do campo clicado
+            # Exibindo uma mensagem com o conteúdo do campo clicado
         QMessageBox.information(self, "Detalhes do Equipamento", equipamento_info)
    
        
 class AdicionarEditarEquipamentoDialog(QDialog):
-    def __init__(self, modelo="",rpm="",polos="",fases="",tensao="",marca_id="",defeito=""):
+    def __init__(self, modelo="", rpm="", polos="", fases="", tensao="", marca_id="", defeito="", marcas_disponiveis=None):
         super().__init__()
         self.setWindowTitle("Adicionar Equipamento")
         self.setWindowIcon(QIcon("img/megamotores.png"))
-
+        self.controller = MarcaController()
+        self.marca_id=marca_id
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
 
         form_layout = QFormLayout()
 
         style_sheet = """
-            QLineEdit {
+            QLineEdit,QComboBox {
                 border: 2px solid #3498db;
                 border-radius: 10px;
                 padding: 8px;
                 font-size: 14px;
             }
-            QLineEdit:focus {
+            QLineEdit:focus , QComboBox:focus{
                 border-color: #e74c3c;
             }
         """
-        # Novos campos adicionados
         self.modelo = QLineEdit(modelo)
         self.rpm = QLineEdit(rpm)
         self.polos = QLineEdit(polos)
         self.fases = QLineEdit(fases)
-        self.tensao = QLineEdit(tensao)
-        self.marca_id = QLineEdit(marca_id)
+        self.tensao = QLineEdit(tensao) 
+        self.combo_marca = QComboBox()
         self.defeito = QLineEdit(defeito)
         
         self.modelo.setStyleSheet(style_sheet)
@@ -896,7 +902,7 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         self.polos.setStyleSheet(style_sheet)
         self.fases.setStyleSheet(style_sheet)
         self.tensao.setStyleSheet(style_sheet)
-        self.marca_id.setStyleSheet(style_sheet)
+        self.combo_marca.setStyleSheet(style_sheet)
         self.defeito.setStyleSheet(style_sheet)
 
         form_layout.addRow(QLabel("Modelo:"), self.modelo)
@@ -904,9 +910,9 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         form_layout.addRow(QLabel("Polos:"), self.polos)
         form_layout.addRow(QLabel("Fases:"), self.fases)
         form_layout.addRow(QLabel("Tensão:"), self.tensao)
-        form_layout.addRow(QLabel("Marca ID:"), self.marca_id) 
+        form_layout.addRow(QLabel("Marca:"), self.combo_marca) 
         form_layout.addRow(QLabel("Defeito:"), self.defeito)
-
+        
         layout.addLayout(form_layout)
 
         button_layout = QHBoxLayout()
@@ -918,9 +924,26 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
         button_layout.addWidget(btn_cancelar)
+        layout.addWidget(self.combo_marca)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
+        
+        if marcas_disponiveis:
+            for marca in marcas_disponiveis:
+                self.combo_marca.addItem(f"{marca[0]} - {marca[1]}")
+            # Se o ID da marca estiver definido, encontre seu índice na lista e selecione-o
+           
+            if self.marca_id and marcas_disponiveis:
+                marca_ids = [marca[0] for marca in marcas_disponiveis]
+                if self.marca_id in marca_ids:
+                    marca_index = marca_ids.index(self.marca_id)
+                    self.combo_marca.setCurrentIndex(marca_index)
+                else:
+                    # Caso o ID da marca não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
+                    self.combo_marca.setCurrentIndex(0)
+        else:
+            marcas_disponiveis = self.controller.BuscarMarca()
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

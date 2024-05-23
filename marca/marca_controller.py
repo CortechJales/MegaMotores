@@ -51,5 +51,9 @@ class MarcaController:
         query = 'SELECT ativo FROM marca WHERE id=?'
         data = (id,)
         return self.db.execute_query(query, data)
+    def BuscarMarca(self):
+        query = "SELECT id, nome FROM marca WHERE ativo=1"
+        result = self.db.execute_query(query)
+        return result
     
         
