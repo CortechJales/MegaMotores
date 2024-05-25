@@ -156,6 +156,9 @@ class OrdemDeServicoUI(QWidget):
         
         self.controller.create_table()       
         self.controller_equipamento.create_table()
+        
+        self.controller_item.create_table()
+
         self.filter_active()
 
         self.ordem_table.doubleClicked.connect(self.show_ordem_details)
@@ -242,13 +245,15 @@ class OrdemDeServicoUI(QWidget):
                     self.ordem_table.setItem(row_number, column_number, item)
 
     def add_ordem(self, cliente, equipamento, data_inicio, mao_de_obra ):
-        valor_numerico = mao_de_obra.replace("R$ ", "")
-        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_numerico)
+        valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
+        valor_arredondado = round(valor_numerico, 2)
+        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado)
         self.filter_active() 
                         
     def edit_ordem(self, cliente, equipamento, data_inicio, mao_de_obra,id):
-        valor_numerico = mao_de_obra.replace("R$ ", "")
-        self.controller.EditarOrdemServico( cliente, equipamento, data_inicio, valor_numerico,id)
+        valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
+        valor_arredondado = round(valor_numerico, 2)
+        self.controller.EditarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado,id)
         self.filter_active()  
 
 
@@ -352,7 +357,7 @@ class OrdemDeServicoUI(QWidget):
             id_ordem = int(self.ordem_table.item(selected_row, 0).text())
         
         # Método para buscar os dados da ordem pelo ID
-            ordens = self.controller.CarregarOrdemServico(id_ordem)
+            ordens = self.controller.ListarOrdemServico(id_ordem)
         
             if ordens:
                 
@@ -417,11 +422,15 @@ class AdicionarEditarOrdemDialog(QDialog):
         self.mao_de_obra.setMaximum(9999.99)    # Definindo duas casas decimais
         self.mao_de_obra.setPrefix("R$ ")
 
-        if mao_de_obra:
-            # Substitui a vírgula pelo ponto e converte para float
-            mao_de_obra_float = float(mao_de_obra.replace(',', '.'))
-            self.mao_de_obra.setValue(mao_de_obra_float)
+        
+        if isinstance(mao_de_obra, str):
+    # Se mao_de_obra for uma string, substitua vírgulas por pontos
+            valor_float = float(mao_de_obra.replace(',', '.'))
+        else:
+    # Caso contrário, assuma que mao_de_obra já é um número float
+            valor_float = mao_de_obra
 
+        self.mao_de_obra.setValue(valor_float)
 
         # Configuração de QDateEdit para as datas de início e final
         self.data_inicio_edit.setCalendarPopup(True)
@@ -636,14 +645,10 @@ class DetalhesOrdemDialog(QDialog):
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
             action_delete = QAction("Excluir", self)
-            action_inactive = QAction("Inativar", self)
-            action_ative = QAction("Reativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
             toolbar.addAction(action_delete)
-            toolbar.addAction(action_inactive)        
-            toolbar.addAction(action_ative)
 
             # Configurar conexões de sinais e slots para os botões
             action_add.triggered.connect(self.show_add_item_dialog)
@@ -654,11 +659,11 @@ class DetalhesOrdemDialog(QDialog):
             # Botões de ação
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
-            action_inactive = QAction("Inativar", self)
+            action_delete = QAction("Inativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
-            toolbar.addAction(action_inactive)   
+            toolbar.addAction(action_delete)   
 
             # Configurar conexões de sinais e slots para os botões
             action_add.triggered.connect(self.show_add_item_dialog)
@@ -682,27 +687,24 @@ class DetalhesOrdemDialog(QDialog):
         # Atualiza a tabela de equipamentos
         self.update_item_table()
    
-    def edit_item(self,ordem_id, produto_id, quantidade, id):
-        self.controller_item.EditarItemOrdem(ordem_id, produto_id, quantidade,ordem_id,id)
+    def edit_item(self, produto_id, quantidade, id):
+        self.controller_item.EditarItemOrdem(produto_id, quantidade, id)
         ordem_id = self.ordem_info['Código']
-        self.equipamentos = self.controller_item.ListarItemOrdem(ordem_id)
-        self.update_item_table()  # Atualizar a tabela após adicionar clientes
+        self.itens = self.controller_item.ListarItemOrdem(ordem_id)  # Atualiza a lista de itens
+        self.update_item_table()  # Atualiza a tabela
 
-
-    def delete_item(self,id):
-      
+    def delete_item(self, id):
         selected_row = self.item_table.currentRow()
         if selected_row != -1:
             id = self.item_table.item(selected_row, 0).text()
             resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o Item Código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
-                self.controller_item.DeletarItemOrdem(id) 
+                self.controller_item.DeletarItemOrdem(id)
                 ordem_id = self.ordem_info['Código']
-                self.equipamentos = self.controller_item.ListarItemOrdem(ordem_id)
-                self.update_item_table()
+                self.itens = self.controller_item.ListarItemOrdem(ordem_id)  # Atualiza a lista de itens
+                self.update_item_table()  # Atualiza a tabela
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um item para excluir.")
-
    
     def update_item_table(self):
         # Limpa a tabela de equipamentos
@@ -715,71 +717,63 @@ class DetalhesOrdemDialog(QDialog):
         for row, equip in enumerate(self.itens):
             id_item = QTableWidgetItem(str(equip['id_item'])) 
 
-            produto_item = QTableWidgetItem(equip['produto'])
+            produto_item = QTableWidgetItem(equip['produto_nome'])
             
-            quantidade_item = QTableWidgetItem(equip['quantidade'])
-            
-            valor_unitario_item = QTableWidgetItem(equip['valor_unitario'])
-            
-            valot_total_item = QTableWidgetItem(equip['valor_total'])
+            quantidade_item = QTableWidgetItem(str(equip['quantidade']))
+
+            valor_unitario_item = QTableWidgetItem(str(equip['valor_unitario']))
+
+            valot_total_item = QTableWidgetItem(str(equip['valor_total']))
 
             self.item_table.setItem(row, 0, id_item)
             self.item_table.setItem(row, 1, produto_item) 
             self.item_table.setItem(row, 2, quantidade_item)
             self.item_table.setItem(row, 3, valor_unitario_item)
             self.item_table.setItem(row, 4, valot_total_item)
+            
           
             
 
     def show_add_item_dialog(self):
-        marcas_disponiveis = self.controller_produto.FiltrarProduto()
-        dialog = AdicionarEditarEquipamentoDialog(marcas_disponiveis=marcas_disponiveis)
+        produtos_disponiveis = self.controller_produto.FiltrarProduto(True)
+        dialog = AdicionarEditarEquipamentoDialog(produtos_disponiveis=produtos_disponiveis)
        
         if dialog.exec_():
-            modelo = dialog.modelo.text()
+            produto_id = dialog.combo_produto.currentText().split(' - ')[0]
             
-            rpm = dialog.rpm.text()
+            quantidade = dialog.quantidade.text()
             
-            polos = dialog.polos.text()
             
-            fases = dialog.fases.text()
-            
-            tensao = dialog.tensao.text()
-            
-            marca_id = dialog.combo_marca.currentText().split(' - ')[0]
-            
-            defeito = dialog.defeito.text()
 
-
-            self.add_item(modelo,rpm,polos,fases,tensao,marca_id,defeito)
+            self.add_item(produto_id,quantidade)
     
     def show_edit_item_dialog(self):
         selected_row = self.item_table.currentRow()
         if selected_row != -1:
-            id = self.item_table.item(selected_row, 0).text()
-            modelo = self.item_table.item(selected_row, 1).text()
-            rpm = self.item_table.item(selected_row, 2).text()
-            polos = self.item_table.item(selected_row, 3).text()
-            fases = self.item_table.item(selected_row, 4).text()
-            tensao = self.item_table.item(selected_row, 5).text()
-            marca_id = self.item_table.item(selected_row, 6).text()
-            defeito = self.item_table.item(selected_row, 7).text()
-
-            # Obtenha a lista de todas as marcas disponíveis
-            marcas_disponiveis = self.controller_marca.BuscarMarca()
-
-            # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
-            dialog = AdicionarEditarEquipamentoDialog(modelo, rpm, polos, fases, tensao, marca_id, defeito, marcas_disponiveis)
-            if dialog.exec_():
-                novo_modelo = dialog.modelo.text()
-                novo_rpm = dialog.rpm.text()
-                novo_polos = dialog.polos.text()
-                novo_fases = dialog.fases.text()
-                novo_tensao = dialog.tensao.text()
-                novo_marca_id = dialog.combo_marca.currentText().split(' - ')[0]
-                novo_defeito = dialog.defeito.text()
+            id_item = int(self.item_table.item(selected_row, 0).text())
+        
+        # Método para buscar os dados da ordem pelo ID
+            itens = self.controller_item.CarregarItemOrdem(id_item)
+        
+            if itens:
+                item = itens[0]  
+                produto = item[2]  
+                quantidade = item[3]  
+                
             
-                self.edit_item(novo_modelo, novo_rpm, novo_polos, novo_fases, novo_tensao, novo_marca_id, novo_defeito, id)
+                produtos_disponiveis = self.controller_produto.FiltrarProduto(True)
+                
+                print(f"cliente que chegou antes de editar: {produto}")
+                
+        
+            # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
+            dialog = AdicionarEditarEquipamentoDialog(produto, quantidade,produtos_disponiveis)
+            if dialog.exec_(): 
+                novo_produto_id= dialog.combo_produto.currentText().split(' - ')[0]
+                novo_quantidade = dialog.quantidade.text()
+                
+            
+                self.edit_item(novo_produto_id, novo_quantidade, id_item)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para editar.")
    
@@ -792,12 +786,12 @@ class DetalhesOrdemDialog(QDialog):
    
        
 class AdicionarEditarEquipamentoDialog(QDialog):
-    def __init__(self, modelo="", rpm="", polos="", fases="", tensao="", marca_id="", defeito="", marcas_disponiveis=None):
+    def __init__(self, produto_id="", quantidade="", produtos_disponiveis=None):
         super().__init__()
-        self.setWindowTitle("Adicionar Equipamento")
+        self.setWindowTitle("Adicionar Materias utilizados")
         self.setWindowIcon(QIcon("img/megamotores.png"))
-        self.controller = MarcaController()
-        self.marca_id=marca_id
+        self.controller = ProdutoController()
+        self.produto_id=produto_id
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -814,29 +808,17 @@ class AdicionarEditarEquipamentoDialog(QDialog):
                 border-color: #e74c3c;
             }
         """
-        self.modelo = QLineEdit(modelo)
-        self.rpm = QLineEdit(rpm)
-        self.polos = QLineEdit(polos)
-        self.fases = QLineEdit(fases)
-        self.tensao = QLineEdit(tensao) 
-        self.combo_marca = QComboBox()
-        self.defeito = QLineEdit(defeito)
         
-        self.modelo.setStyleSheet(style_sheet)
-        self.rpm.setStyleSheet(style_sheet)
-        self.polos.setStyleSheet(style_sheet)
-        self.fases.setStyleSheet(style_sheet)
-        self.tensao.setStyleSheet(style_sheet)
-        self.combo_marca.setStyleSheet(style_sheet)
-        self.defeito.setStyleSheet(style_sheet)
+        self.combo_produto = QComboBox()
+        self.quantidade = QLineEdit(str(quantidade))
+        
+        self.combo_produto.setStyleSheet(style_sheet)
+        self.quantidade.setStyleSheet(style_sheet)
+      
 
-        form_layout.addRow(QLabel("Modelo:"), self.modelo)
-        form_layout.addRow(QLabel("RPM:"), self.rpm)
-        form_layout.addRow(QLabel("Polos:"), self.polos)
-        form_layout.addRow(QLabel("Fases:"), self.fases)
-        form_layout.addRow(QLabel("Tensão:"), self.tensao)
-        form_layout.addRow(QLabel("Marca:"), self.combo_marca) 
-        form_layout.addRow(QLabel("Defeito:"), self.defeito)
+        form_layout.addRow(QLabel("Produto:"), self.combo_produto)
+        form_layout.addRow(QLabel("Quantidade:"), self.quantidade)
+        
         
         layout.addLayout(form_layout)
 
@@ -849,26 +831,26 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
         button_layout.addWidget(btn_cancelar)
-        layout.addWidget(self.combo_marca)
+        layout.addWidget(self.combo_produto)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
         
-        if marcas_disponiveis:
-            for marca in marcas_disponiveis:
-                self.combo_marca.addItem(f"{marca[0]} - {marca[1]}")
+        if produtos_disponiveis:
+            for produto in produtos_disponiveis:
+                self.combo_produto.addItem(f"{produto[0]} - {produto[1]}")
             # Se o ID da marca estiver definido, encontre seu índice na lista e selecione-o
            
-            if self.marca_id and marcas_disponiveis:
-                marca_ids = [marca[0] for marca in marcas_disponiveis]
-                if self.marca_id in marca_ids:
-                    marca_index = marca_ids.index(self.marca_id)
-                    self.combo_marca.setCurrentIndex(marca_index)
+            if self.produto_id and produtos_disponiveis:
+                produto_ids = [produto[0] for produto in produtos_disponiveis]
+                if self.produto_id in produto_ids:
+                    produto_index = produto_ids.index(self.produto_id)
+                    self.combo_produto.setCurrentIndex(produto_index)
                 else:
                     # Caso o ID da marca não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
-                    self.combo_marca.setCurrentIndex(0)
+                    self.combo_produto.setCurrentIndex(0)
         else:
-            marcas_disponiveis = self.controller.BuscarMarca()
+            produtos_disponiveis = self.controller.FiltrarProduto(True)
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

@@ -227,12 +227,15 @@ class ProdutoUI(QWidget):
                     self.product_table.setItem(row_number, column_number, item)
 
     def add_produto(self, id, descricao, valor):
-        valor_numerico = valor.replace("R$ ", "")  # Remove o "R$" antes de salvar
+        valor_numerico = valor.replace("R$ ", "")
+        valor_numerico = float(valor.replace(',', '.'))
+    
         self.controller.CadastrarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
     def edit_produto(self, descricao, valor, id):
-        valor_numerico = valor.replace("R$ ", "")  # Remove o "R$" antes de salvar
+        valor_numerico = valor.replace("R$ ", "") 
+        valor_numerico = float(valor.replace(',', '.')) 
         self.controller.EditarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 

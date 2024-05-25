@@ -15,13 +15,14 @@ class ItemOrdemController:
                       )
         '''
         self.db.create_table(sql)
+        
     def ListarItemOrdem(self, ordem_id):
         query = '''SELECT 
     itens_ordem.id AS id_item,
     produto.descricao AS produto_nome,
     itens_ordem.quantidade AS quantidade,
-    produto.valor AS valor_unitario,
-    SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade) AS valor_total
+    printf('%.2f', produto.valor) AS valor_unitario,
+    printf('%.2f', ROUND(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2)) AS valor_total
 FROM 
     itens_ordem 
 LEFT JOIN 
@@ -31,12 +32,14 @@ LEFT JOIN
 WHERE 
     ordens_servico.id = ?
 GROUP BY 
-   itens_ordem.id;
+    itens_ordem.id;
+
+
 
 '''
         data = (ordem_id,)
         result = self.db.execute_query(query, data)
-        itensOrdem = [{'id': row[0], 'id_item': row[1],'produto_nome': row[2],'quantidade': row[3],'valor_unitario': row[4],'valor_total': row[4]} for row in result]
+        itensOrdem = [{'id_item': row[0],'produto_nome': row[1],'quantidade': row[2],'valor_unitario': row[3],'valor_total': row[4]} for row in result]
         return itensOrdem
     
     def CarregarItemOrdem(self, id):
@@ -47,10 +50,10 @@ GROUP BY
     def CadastrarItemOrdem(self, ordem_id, produto_id, quantidade ):
         query = '''
             INSERT INTO itens_ordem 
-            ( id, ordem_id, produto_id, quantidade, ativo) 
-            VALUES (?, ?, ?, ?, ?)
+            ( ordem_id, produto_id, quantidade) 
+            VALUES (?, ?, ?)
         '''
-        data = (ordem_id, produto_id, quantidade, True)
+        data = (ordem_id, produto_id, quantidade)
         self.db.execute_query_no_return(query, data)
 
     def EditarItemOrdem(self, produto_id, quantidade, id):

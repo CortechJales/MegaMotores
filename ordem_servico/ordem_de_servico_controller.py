@@ -10,7 +10,7 @@ class OrdemDeServicoController:
                       equipamento_id INTEGER,
                       data_inicio DATA,
                       data_final DATA,
-                      mao_de_obra REAL,
+                      mao_de_obra NUMERIC(10, 2),
                       fechada BOOLEAN,
                       ativo BOOLEAN,
                       FOREIGN KEY(cliente_id) REFERENCES cliente(id),
@@ -18,6 +18,7 @@ class OrdemDeServicoController:
                       )'''
        
         self.db.create_table(sql)
+        
     
     def ListarOrdemServico(self):
         query = '''SELECT 
@@ -57,9 +58,8 @@ GROUP BY
         query = 'SELECT * FROM ordens_servico where id=?'
         data = (id,)
         return self.db.execute_query(query,data)
-    
-    def FiltrarOrdemServico(self, tipo):
-        query = '''SELECT 
+    def ListarOrdemServico(self, id):
+        query = ''' SELECT 
     ordens_servico.id AS id_ordem,
     cliente.nome AS nome_cliente,
     equipamento_cliente.modelo AS modelo_equipamento,
@@ -84,9 +84,41 @@ LEFT JOIN
 LEFT JOIN 
     produto ON itens_ordem.produto_id = produto.id 
 WHERE 
+    ordens_servico.ativo = 1 and ordens_servico.id=? 
+GROUP BY 
+    ordens_servico.id;
+'''
+        data = (id,)
+        return self.db.execute_query(query,data)
+    
+    def FiltrarOrdemServico(self, tipo):
+        query = '''SELECT 
+    ordens_servico.id AS id_ordem,
+    cliente.nome AS nome_cliente,
+    equipamento_cliente.modelo AS modelo_equipamento,
+    ordens_servico.data_inicio,
+    ordens_servico.data_final,
+    printf('%.2f', ordens_servico.mao_de_obra) AS mao_de_obra,
+    CASE 
+        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
+        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
+    END AS valor_total,
+    ordens_servico.ativo
+FROM 
+    ordens_servico 
+JOIN 
+    cliente ON ordens_servico.cliente_id = cliente.id 
+JOIN 
+    equipamento_cliente ON ordens_servico.equipamento_id = equipamento_cliente.id 
+LEFT JOIN 
+    itens_ordem ON ordens_servico.id = itens_ordem.ordem_id 
+LEFT JOIN 
+    produto ON itens_ordem.produto_id = produto.id 
+WHERE 
     ordens_servico.ativo = ? 
 GROUP BY 
     ordens_servico.id;
+
 
 
 

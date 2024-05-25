@@ -31,7 +31,7 @@ class ProdutoController:
             return False
     
     def FiltrarProduto(self,tipo):
-        query = 'SELECT * FROM produto where ativo=?'
+        query = '''SELECT id,descricao,printf('%.2f', valor) AS valor, ativo FROM  produto WHERE     ativo = ?;'''
         data = (tipo,)
         return self.db.execute_query(query,data)
     
