@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.cliente_ui = ClienteUI(user_type)
         self.produto_ui = ProdutoUI(user_type)
         self.marca_ui = MarcaUI(user_type)
-        self.ordem_de_servico_ui = OrdemDeServicoUI()
+        self.ordem_de_servico_ui = OrdemDeServicoUI(user_type)
         self.cadastro_ui = CadastroUsuario()
 
         self.central_widget.addWidget(self.cliente_ui)

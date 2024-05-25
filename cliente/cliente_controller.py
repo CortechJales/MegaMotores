@@ -62,5 +62,9 @@ class ClienteController:
         query = 'SELECT ativo FROM cliente WHERE id=?'
         data = (id,)
         return self.db.execute_query(query, data)
+    def BuscarCliente(self):
+        query = "SELECT id, nome FROM cliente WHERE ativo=1"
+        result = self.db.execute_query(query)
+        return result
     
         

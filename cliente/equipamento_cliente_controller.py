@@ -76,5 +76,13 @@ class EquipamentoClienteController:
         query = 'SELECT ativo FROM equipamento_cliente WHERE id=?'
         data = (id,)
         return self.db.execute_query(query, data)
-    
+    def BuscarEquipamento(self,id):
+        query = "SELECT id, modelo FROM equipamento_cliente WHERE cliente_id = ? AND ativo = 1"
+        data = (id,)
+        result = self.db.execute_query(query,data)
+        return result
+    def BuscarEquipamentos(self):
+        query = "SELECT id, modelo FROM equipamento_cliente WHERE ativo = 1"
+        result = self.db.execute_query(query)
+        return result
         

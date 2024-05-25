@@ -18,6 +18,7 @@ class ProdutoController:
         query = 'SELECT * FROM produto'
         return self.db.execute_query(query)
     
+    
     def ValidarProdutoCadastrado(self, id):
         query = 'SELECT descricao FROM produto WHERE id=?'
         data = (id,)
