@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, Q
 from cliente.cliente_ui import ClienteUI
 from produto.produto_ui import ProdutoUI
 from ordem_servico.ordem_de_servico_ui import OrdemDeServicoUI
+from marca.marca_ui import MarcaUI
 from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
 from PyQt5.QtGui import QIcon, QFont,QPixmap
@@ -14,19 +15,21 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Sistema de Gerenciamento")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 900, 600)
         self.setWindowIcon(QIcon("img/megamotores.png"))
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)
 
         self.cliente_ui = ClienteUI(user_type)
-        self.produto_ui = ProdutoUI()
-        self.ordem_de_servico_ui = OrdemDeServicoUI()
+        self.produto_ui = ProdutoUI(user_type)
+        self.marca_ui = MarcaUI(user_type)
+        self.ordem_de_servico_ui = OrdemDeServicoUI(user_type)
         self.cadastro_ui = CadastroUsuario()
 
         self.central_widget.addWidget(self.cliente_ui)
         self.central_widget.addWidget(self.produto_ui)
+        self.central_widget.addWidget(self.marca_ui)
         self.central_widget.addWidget(self.ordem_de_servico_ui)
         self.central_widget.addWidget(self.cadastro_ui)
 
@@ -54,8 +57,13 @@ class MainWindow(QMainWindow):
         produto_action = QAction("Produtos", self)
         produto_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.produto_ui))
 
+        marca_action = QAction("Marca", self)
+        marca_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.marca_ui))
+
         ordem_de_servico_action = QAction("Ordens de Serviço", self)
         ordem_de_servico_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.ordem_de_servico_ui))
+
+        
         if user_type == 'adm':
             usuario_action = QAction("Usuários", self)
             usuario_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cadastro_ui))
@@ -71,13 +79,13 @@ class MainWindow(QMainWindow):
         
         """
         if user_type == 'adm':
-            for action in [cliente_action, produto_action, ordem_de_servico_action, usuario_action]:
+            for action in [cliente_action, produto_action,marca_action, ordem_de_servico_action, usuario_action]:
                 action_button = QPushButton(action.text(), self)
                 action_button.setStyleSheet(button_style)
                 action_button.clicked.connect(action.trigger)
                 toolbar.addWidget(action_button)
         else:
-            for action in [cliente_action, produto_action, ordem_de_servico_action]:
+            for action in [cliente_action, produto_action, marca_action, ordem_de_servico_action]:
                 action_button = QPushButton(action.text(), self)
                 action_button.setStyleSheet(button_style)
                 action_button.clicked.connect(action.trigger)

@@ -7,18 +7,26 @@ class EquipamentoClienteController:
         sql = '''
         CREATE TABLE IF NOT EXISTS equipamento_cliente (
         id INTEGER PRIMARY KEY,
-        descricao TEXT,
+        modelo TEXT,
+        rpm TEXT,
+        polos TEXT,
+        fases TEXT,
+        tensao TEXT,
+        marca_id TEXT,
+        defeito TEXT,
         cliente_id INTEGER,
         ativo BOOLEAN,
+        FOREIGN KEY(cliente_id) REFERENCES cliente(id)
+        
         FOREIGN KEY(cliente_id) REFERENCES cliente(id)
         )
         '''
         self.db.create_table(sql)
     def ListarEquipamentoCliente(self, cliente_id):
-        query = "SELECT id, descricao FROM equipamento_cliente WHERE cliente_id = ? and ativo=1"
+        query = "SELECT id, modelo, rpm, polos, fases, tensao, marca_id, defeito FROM equipamento_cliente WHERE cliente_id = ? and ativo=1"
         data = (cliente_id,)
         result = self.db.execute_query(query, data)
-        equipamentos = [{'id': row[0], 'descricao': row[1]} for row in result]
+        equipamentos = [{'id': row[0], 'modelo': row[1],'rpm': row[2],'polos': row[3],'fases': row[4],'tensao': row[5],'marca_id': row[6],'defeito': row[7]} for row in result]
         return equipamentos
     
     def CarregarEquipamentoCliente(self, id):
@@ -31,14 +39,22 @@ class EquipamentoClienteController:
         data = (tipo,)
         return self.db.execute_query(query,data)
     
-    def CadastrarEquipamentoCliente(self, descricao, cliente_id):
-        query = 'INSERT INTO equipamento_cliente (descricao, cliente_id, ativo) VALUES (?, ?, ?)'
-        data = (descricao, cliente_id, True)
+    def CadastrarEquipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id):
+        query = '''
+            INSERT INTO equipamento_cliente 
+            (modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id, ativo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        '''
+        data = (modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id, True)
         self.db.execute_query_no_return(query, data)
-    
-    def EditarequipamentoCliente(self, descricao,id):    
-        query = 'UPDATE equipamento_cliente SET descricao=? WHERE id=?'
-        data = (descricao, id)
+
+    def EditarequipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, defeito, id):
+        query = '''
+            UPDATE equipamento_cliente 
+            SET modelo=?, rpm=?, polos=?, fases=?, tensao=?, marca_id=?, defeito=? 
+            WHERE id=?
+        '''
+        data = (modelo, rpm, polos, fases, tensao, marca_id, defeito, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarEquipamentoCliente(self, id):    
@@ -60,5 +76,13 @@ class EquipamentoClienteController:
         query = 'SELECT ativo FROM equipamento_cliente WHERE id=?'
         data = (id,)
         return self.db.execute_query(query, data)
-    
+    def BuscarEquipamento(self,id):
+        query = "SELECT id, modelo FROM equipamento_cliente WHERE cliente_id = ? AND ativo = 1"
+        data = (id,)
+        result = self.db.execute_query(query,data)
+        return result
+    def BuscarEquipamentos(self):
+        query = "SELECT id, modelo FROM equipamento_cliente WHERE ativo = 1"
+        result = self.db.execute_query(query)
+        return result
         
