@@ -66,7 +66,13 @@ class OrdemDeServicoUI(QWidget):
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_inactive)
             filter_layout.addWidget(self.btn_inactive)
-
+        
+        if self.user_type == 'usr':
+         
+            self.btn_active = QPushButton("Atualizar")
+            self.btn_active.setStyleSheet(filter_button_style)
+            self.btn_active.clicked.connect(self.filter_active)
+            filter_layout.addWidget(self.btn_active)
         layout.addLayout(filter_layout)
 
         self.ordem_table = QTableWidget()
