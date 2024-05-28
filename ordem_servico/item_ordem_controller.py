@@ -59,10 +59,10 @@ GROUP BY
     def EditarItemOrdem(self, produto_id, quantidade, id):
         query = '''
             UPDATE itens_ordem 
-            SET ordem_id=?, produto_id=?, quantidade=?
+            SET  produto_id=?, quantidade=?
             WHERE id=?
         '''
-        data = ( id, produto_id, quantidade, id)
+        data = ( produto_id, quantidade, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarItemOrdem(self, id):    
