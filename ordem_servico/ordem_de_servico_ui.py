@@ -9,6 +9,7 @@ from marca.marca_controller import MarcaController
 from PyQt5.QtGui import QIcon
 import re
 import requests
+from datetime import datetime
 
 
 class OrdemDeServicoUI(QWidget):
@@ -123,18 +124,21 @@ class OrdemDeServicoUI(QWidget):
 
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
+            action_close = QAction("Fechar", self)
             action_delete = QAction("Excluir", self)
             action_inactive = QAction("Inativar", self)
             action_ative = QAction("Reativar", self)
 
             toolbar.addAction(action_add)
-            toolbar.addAction(action_edit)
+            toolbar.addAction(action_edit)  
+            toolbar.addAction(action_close)
             toolbar.addAction(action_delete)
             toolbar.addAction(action_inactive)        
             toolbar.addAction(action_ative)
 
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
+            action_close.triggered.connect(self.fechar_ordem)
             action_delete.triggered.connect(self.delete_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
             action_ative.triggered.connect(self.ative_ordem)
@@ -142,14 +146,17 @@ class OrdemDeServicoUI(QWidget):
 
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
+            action_close = QAction("Fechar", self)
             action_inactive = QAction("Inativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
+            toolbar.addAction(action_close)
             toolbar.addAction(action_inactive)   
 
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
+            action_close.triggered.connect(self.fechar_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
 
         self.setLayout(layout)
@@ -306,7 +313,26 @@ class OrdemDeServicoUI(QWidget):
                     QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço de serviço para Ativar.")   
-
+    
+    def fechar_ordem(self):
+        selected_row = self.ordem_table.currentRow()
+        if selected_row != -1:
+            id = self.ordem_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja fechar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                resultado = self.controller.ValidarOrdemServicoFechada(id)
+                if resultado:
+                    estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
+                    if estado_cliente == 0:  # Verifica se o cliente está ati                        
+                        data_final = datetime.now().strftime("%d/%m/%Y")
+                        self.controller.FecharOrdemServico(data_final,id)
+                        self.filter_active()
+                    else:
+                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está fechada.")
+                else:
+                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para fechar.")
     def show_add_ordem_dialog(self):
         clientes_disponiveis = self.controller_cliente.BuscarCliente()
         dialog = AdicionarEditarOrdemDialog(clientes_disponiveis=clientes_disponiveis)
@@ -552,6 +578,8 @@ class DetalhesOrdemDialog(QDialog):
         self.controller_item = ItemOrdemController()  # Adicionando o atributo controller_equipamento
         
         self.controller_produto = ProdutoController()
+        
+        self.controller_ordem = OrdemDeServicoController()
         self.setWindowTitle("Detalhes da Ordem de serviço")
         self.setWindowIcon(QIcon("img/megamotores.png"))
 
@@ -632,36 +660,26 @@ class DetalhesOrdemDialog(QDialog):
             }
         """)
         layout.addWidget(toolbar)
-        
-        if self.user_type == 'adm':
+        id_ordem = self.ordem_info['Código']
+        resultado = self.controller_ordem.ValidarOrdemServicoFechada(id_ordem)
+        if resultado:
+                    estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
+                    if estado_cliente == 0:
             # Botões de ação
-            action_add = QAction("Adicionar", self)
-            action_edit = QAction("Editar", self)
-            action_delete = QAction("Excluir", self)
+                        action_add = QAction("Adicionar", self)
+                        action_edit = QAction("Editar", self)
+                        action_delete = QAction("Excluir", self)
 
-            toolbar.addAction(action_add)
-            toolbar.addAction(action_edit)
-            toolbar.addAction(action_delete)
+                        toolbar.addAction(action_add)
+                        toolbar.addAction(action_edit)
+                        toolbar.addAction(action_delete)
 
             # Configurar conexões de sinais e slots para os botões
-            action_add.triggered.connect(self.show_add_item_dialog)
-            action_edit.triggered.connect(self.show_edit_item_dialog)
-            action_delete.triggered.connect(self.delete_item)
+                        action_add.triggered.connect(self.show_add_item_dialog)
+                        action_edit.triggered.connect(self.show_edit_item_dialog)
+                        action_delete.triggered.connect(self.delete_item)
 
-        elif self.user_type == 'usr':
-            # Botões de ação
-            action_add = QAction("Adicionar", self)
-            action_edit = QAction("Editar", self)
-            action_delete = QAction("Inativar", self)
-
-            toolbar.addAction(action_add)
-            toolbar.addAction(action_edit)
-            toolbar.addAction(action_delete)   
-
-            # Configurar conexões de sinais e slots para os botões
-            action_add.triggered.connect(self.show_add_item_dialog)
-            action_edit.triggered.connect(self.show_edit_item_dialog)
-            action_delete.triggered.connect(self.delete_item)
+                    
         
         self.item_table.doubleClicked.connect(self.show_item_message)
         self.setLayout(layout)
