@@ -423,14 +423,7 @@ class AdicionarEditarOrdemDialog(QDialog):
         self.mao_de_obra.setPrefix("R$ ")
 
         
-        if isinstance(mao_de_obra, str):
-    # Se mao_de_obra for uma string, substitua vírgulas por pontos
-            valor_float = float(mao_de_obra.replace(',', '.'))
-        else:
-    # Caso contrário, assuma que mao_de_obra já é um número float
-            valor_float = mao_de_obra
-
-        self.mao_de_obra.setValue(valor_float)
+       
 
         # Configuração de QDateEdit para as datas de início e final
         self.data_inicio_edit.setCalendarPopup(True)
