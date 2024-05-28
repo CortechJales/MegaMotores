@@ -65,12 +65,10 @@ GROUP BY
     equipamento_cliente.modelo AS modelo_equipamento,
     ordens_servico.data_inicio,
     ordens_servico.data_final,
-    ordens_servico.mao_de_obra,
+    printf('%.2f', ordens_servico.mao_de_obra) AS mao_de_obra,
     CASE 
-        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN ordens_servico.mao_de_obra
-        ELSE ROUND(
-            ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2
-        )
+        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
+        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
     END AS valor_total,
     ordens_servico.ativo
 FROM 
