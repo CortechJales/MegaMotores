@@ -227,15 +227,13 @@ class ProdutoUI(QWidget):
                     self.product_table.setItem(row_number, column_number, item)
 
     def add_produto(self, id, descricao, valor):
-        valor_numerico = valor.replace("R$ ", "")
-        valor_numerico = float(valor.replace(',', '.'))
+        valor_numerico = float(valor.replace('R$', '').replace(',', '.'))
     
         self.controller.CadastrarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
     def edit_produto(self, descricao, valor, id):
-        valor_numerico = valor.replace("R$ ", "") 
-        valor_numerico = float(valor.replace(',', '.')) 
+        valor_numerico = float(valor.replace('R$', '').replace(',', '.'))
         self.controller.EditarProduto(descricao, valor_numerico, id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
@@ -425,10 +423,7 @@ class EditarProdutoDialog(QDialog):
         self.valor.setDecimals(2)
         self.valor.setMaximum(9999.99) # Definindo duas casas decimais
 
-        if valor:
-            # Substitui a vírgula pelo ponto e converte para float
-            valor_float = float(valor.replace(',', '.'))
-            self.valor.setValue(valor_float)
+       
 
         # Estilo CSS para os campos de entrada
         style_sheet = """
