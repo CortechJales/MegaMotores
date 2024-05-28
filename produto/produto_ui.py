@@ -423,7 +423,10 @@ class EditarProdutoDialog(QDialog):
         self.valor.setDecimals(2)
         self.valor.setMaximum(9999.99) # Definindo duas casas decimais
 
-       
+        if valor:
+            # Substitui a vírgula pelo ponto e converte para float
+            valor_float = float(valor.replace(',', '.'))
+            self.valor.setValue(valor_float)
 
         # Estilo CSS para os campos de entrada
         style_sheet = """

@@ -454,7 +454,9 @@ class AdicionarEditarOrdemDialog(QDialog):
         self.mao_de_obra.setMaximum(9999.99)    # Definindo duas casas decimais
         self.mao_de_obra.setPrefix("R$ ")
 
-        
+        if mao_de_obra:
+            # Substitui a vírgula pelo ponto e converte para float
+            self.mao_de_obra.setValue(mao_de_obra) 
        
 
         # Configuração de QDateEdit para as datas de início e final
