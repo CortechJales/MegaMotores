@@ -518,7 +518,7 @@ class AdicionarEditarClienteDialog(QDialog):
 
         return cpf == cpf_11
 
-     def validate_cnpj(self, cnpj):
+    def validate_cnpj(self, cnpj):
         cnpj = re.sub(r'\D', '', cnpj)
         if len(cnpj) != 14:
             return False
