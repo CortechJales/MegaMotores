@@ -518,19 +518,22 @@ class AdicionarEditarClienteDialog(QDialog):
 
         return cpf == cpf_11
 
-    def validate_cnpj(self, cnpj):
+     def validate_cnpj(self, cnpj):
         cnpj = re.sub(r'\D', '', cnpj)
         if len(cnpj) != 14:
             return False
 
-        def calculate_digit(digits):
-            s = sum(int(digit) * weight for digit, weight in zip(digits, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]))
+        def calculate_digit(digits, multipliers):
+            s = sum(int(digit) * weight for digit, weight in zip(digits, multipliers))
             d = 11 - s % 11
             return str(d if d < 10 else 0)
 
+        multipliers_first_digit = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        multipliers_second_digit = [6] + multipliers_first_digit
+
         first_twelve_digits = cnpj[:12]
-        cnpj_13 = first_twelve_digits + calculate_digit(first_twelve_digits)
-        cnpj_14 = cnpj_13 + calculate_digit(cnpj_13)
+        cnpj_13 = first_twelve_digits + calculate_digit(first_twelve_digits, multipliers_first_digit)
+        cnpj_14 = cnpj_13 + calculate_digit(cnpj_13, multipliers_second_digit)
 
         return cnpj == cnpj_14
 
