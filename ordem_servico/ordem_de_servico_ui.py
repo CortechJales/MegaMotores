@@ -1,14 +1,17 @@
-from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QMessageBox, QCheckBox,QDateEdit, QButtonGroup, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
-from PyQt5.QtCore import Qt,QDate
+from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QMessageBox, QCheckBox,QDateEdit, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtCore import Qt,QDate,QRectF
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from cliente.equipamento_cliente_controller import EquipamentoClienteController
 from cliente.cliente_controller import ClienteController
 from ordem_servico.ordem_de_servico_controller import OrdemDeServicoController
 from ordem_servico.item_ordem_controller import ItemOrdemController
 from produto.produto_controller import ProdutoController
-from marca.marca_controller import MarcaController
-from PyQt5.QtGui import QIcon
-import re
-import requests
+from PyQt5.QtGui import QIcon,QPainter,QTextDocument
+from jinja2 import Template
+import pdfkit
+import os
+import time
+import subprocess
 from datetime import datetime
 
 
@@ -583,11 +586,17 @@ class DetalhesOrdemDialog(QDialog):
         self.ordem_info = ordem_info
         self.itens_ordem = itens_ordem
         self.user_type = user_type
-        self.controller_item = ItemOrdemController()  # Adicionando o atributo controller_equipamento
+
+        self.controller_cliente=ClienteController()
+
+        self.controller_equipamento=EquipamentoClienteController()
+
+        self.controller_item = ItemOrdemController()  
         
         self.controller_produto = ProdutoController()
         
         self.controller_ordem = OrdemDeServicoController()
+
         self.setWindowTitle("Detalhes da Ordem de serviço")
         self.setWindowIcon(QIcon("img/megamotores.png"))
 
@@ -687,13 +696,133 @@ class DetalhesOrdemDialog(QDialog):
                         action_edit.triggered.connect(self.show_edit_item_dialog)
                         action_delete.triggered.connect(self.delete_item)
 
-                    
         
-        self.item_table.doubleClicked.connect(self.show_item_message)
+        action_print = QAction("Imprimir", self)      
+        
+        toolbar.addAction(action_print)
+        
+        action_print.triggered.connect(self.print_order)
         self.setLayout(layout)
 
     
     # Métodos para manipulação de equipamentos...
+
+    def print_order(self):
+        # Função para renderizar e imprimir o HTML como PDF
+        
+        # Obtendo os detalhes do cliente
+        id_ordem = self.ordem_info['Código']
+        ords = self.controller_ordem.CarregarImpressaoOrdem(id_ordem)
+        
+        if ords:
+            ord = ords[0] 
+            cliente_id = ord[1]  
+            equipamento_id = ord[2]  
+            data_inicio = ord[3]  
+            data_final = ord[4]
+            mao_de_obra = ord[5]
+            valor_total = ord[6]
+            total_material = ord[7]
+
+            ordem_info = {
+                    'Data_inicial': data_inicio,
+                    'Data_final': data_final,
+                    'mao_de_obra': mao_de_obra,
+                    'Total_ordem': valor_total,
+                    'Total_material': total_material
+                    
+                }
+            
+            print(f"cliente_id: {cliente_id}")
+            clientes = self.controller_cliente.CarregarCliente(cliente_id)
+
+            if clientes:
+                cliente = clientes[0] 
+                nome = cliente[1]  
+                cep = cliente[2]  
+                endereco = cliente[3]  
+                numero = cliente[4]
+                cidade = cliente[5]
+                estado = cliente[6]
+                cpf_cnjp = cliente[7]
+                telefone = cliente[8]
+
+                cliente_info = {
+                    'Nome': nome,
+                    'Cep': cep,
+                    'Endereco': endereco,
+                    'Número': numero,
+                    'Cidade': cidade,
+                    'Estado': estado,
+                    'Cpf_cnpj': cpf_cnjp,
+                    'Telefone': telefone
+                }
+                print(f"equipamento_id: {equipamento_id}")
+                equips = self.controller_equipamento.CarregarImpressaoEquipamento(equipamento_id)
+
+                if equips:
+                    equip = equips[0] 
+                    modelo = equip[1]  
+                    rpm = equip[2]  
+                    polos = equip[3]  
+                    fases = equip[4]
+                    tensao = equip[5]
+                    marca = equip[6]
+                    defeito = equip[7]
+                
+
+                    equipamento_info = {
+                        'Modelo': modelo,
+                        'Rpm': rpm,
+                        'Polos': polos,
+                        'Fases': fases,
+                        'Tensao': tensao,
+                        'Marca': marca,
+                        'Defeito': defeito
+                    }
+
+                    # Obter os itens da ordem de serviço
+                    itens_ordem = self.itens_ordem
+
+                    # Path para salvar o arquivo PDF temporário
+                    pdf_path = 'ordem_servico/temp.pdf'
+
+                    # Renderiza o template HTML com os dados fornecidos
+                    template_path = 'ordem_servico/teste.html'
+                    html_content = self.render_template(template_path, cliente_info=cliente_info, equipamento_info=equipamento_info, itens_ordem=itens_ordem, ordem_info=ordem_info)
+
+                    # Path para salvar o arquivo HTML temporário
+                    html_temp_path = 'ordem_servico/temp_ordem.html'
+
+                    # Adicione a codificação UTF-8 ao abrir o arquivo HTML temporário para escrita
+                    with open(html_temp_path, 'w', encoding='utf-8') as f:
+                        f.write(html_content)
+
+                    # Converte o HTML para PDF
+                    configuration = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe')
+                    pdfkit.from_file(html_temp_path, pdf_path, configuration=configuration, options={'encoding': "UTF-8"})
+
+                                    
+                    if os.path.exists(pdf_path):
+                            
+                            subprocess.run(['cmd', '/c', 'start', '', '/WAIT', pdf_path], shell=True)  
+                    else:
+
+                        print("O arquivo PDF não foi encontrado.")
+                
+                else:
+                    QMessageBox.warning(self, "Aviso", "Falha ao carregar informações do equipamento.")    
+                # Remove os arquivos temporários
+            else:
+                QMessageBox.warning(self, "Aviso", "Falha ao carregar informações do cliente.")
+        else:
+            QMessageBox.warning(self, "Aviso", "Falha ao carregar informações da ordem de serviço.")
+
+    def render_template(self, template_path, **kwargs):
+        with open(template_path, 'r', encoding='utf-8') as f:  # Adicione a codificação UTF-8 ao abrir o arquivo HTML
+            template_string = f.read()
+        template = Template(template_string)
+        return template.render(**kwargs)
     
     def add_item(self, produto_id, quantidade):
        # Adiciona o novo equipamento à lista de equipamentos
@@ -802,8 +931,140 @@ class DetalhesOrdemDialog(QDialog):
 
             # Exibindo uma mensagem com o conteúdo do campo clicado
         QMessageBox.information(self, "Detalhes do Equipamento", equipamento_info)
-   
+    def show_ordem_imprimir(self):
+        selected_row = self.ordem_table.currentRow()
+        if selected_row != -1:
+            id_ordem = int(self.ordem_table.item(selected_row, 0).text())
+        
+        # Método para buscar os dados da ordem pelo ID
+            cliente= self.controll
+            ordens = self.controller.ListarOrdemServico(id_ordem)
+        
+            if ordens:
+                
+                ordem = ordens[0] 
+                cliente = ordem[1]  
+                equipamento = ordem[2]  
+                data_inicio = ordem[3]  
+                data_final = ordem[4]
+                mao_de_obra = ordem[5]
+                valor_total = ordem[6]
+
+                cliente_info = {
+                'Código': id_ordem,
+                'Cliente': cliente,
+                'Equipamento': equipamento,
+                'Data de início': data_inicio,
+                'Data Final': data_final,
+                'Mão de obra': mao_de_obra,
+                'Valor Total': valor_total
+            }
+            itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
+
+            dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
+        
+        # Definindo o tamanho mínimo e máximo da janela
+            dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
+            dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
+
+            dialog.exec_()
+
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
+
+class ImprimirOrdemDialog(QDialog):
+    def __init__(self,cliente_info,equip_info, ordem_info, itens_ordem):
+        super().__init__()
+
+        self.cliente_info = cliente_info
+        self.equip_info = equip_info
+        self.ordem_info = ordem_info
+        self.itens_ordem = itens_ordem
+
+        self.controller_cliente=ClienteController()
+
+        self.controller_equipamento=EquipamentoClienteController()
+
+        self.controller_item = ItemOrdemController()  
+        
+        self.controller_produto = ProdutoController()
+        
+        self.controller_ordem = OrdemDeServicoController()
+
+        self.setWindowTitle("Imprimir Ordem de servço")
+        self.setWindowIcon(QIcon("img/megamotores.png"))
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Barra de ferramentas com botões de ação
+        toolbar = QToolBar("Barra de Ferramentas")
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background-color: #ecf0f1;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QToolButton {
+                background-color: #3498db;
+                color: white;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 5px;
+                margin-right: 5px;
+            }
+            QToolButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+        layout.addWidget(toolbar)
        
+
+        
+        action_print = QAction("Imprimir", self)      
+        
+        toolbar.addAction(action_print)
+        
+        action_print.triggered.connect(self.print_order)
+        self.setLayout(layout)
+
+    
+    # Métodos para manipulação de equipamentos...
+
+    def print_order(self):
+        # Criar uma instância da impressora
+        printer = QPrinter(QPrinter.HighResolution)
+        dialog = QPrintDialog(printer, self)
+        
+        if dialog.exec_() == QPrintDialog.Accepted:
+            # Configurar a escala de impressão para o tamanho da tela
+            self.setFixedSize(self.sizeHint())
+
+            # Renderizar a tela de detalhes na impressora
+            self.renderContents(printer)
+
+    def renderContents(self, printer):
+        # Criar um QPainter para desenhar na impressora
+        painter = QPainter()
+        
+        # Iniciar a pintura com a impressora como dispositivo de pintura
+        painter.begin(printer)
+        
+        # Configurar a escala de impressão para preencher a página inteira
+        screen_size = self.size()
+        printer_size = printer.pageRect(QPrinter.DevicePixel)
+        scale_factor = min(printer_size.width() / screen_size.width(),
+                          printer_size.height() / screen_size.height())
+        painter.scale(scale_factor, scale_factor)
+
+        # Renderizar o conteúdo da janela na impressora
+        self.render(painter)
+
+        # Finalizar a pintura
+        painter.end()
+
+
+            
 class AdicionarEditarEquipamentoDialog(QDialog):
     def __init__(self, produto_id="", quantidade="", produtos_disponiveis=None):
         super().__init__()

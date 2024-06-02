@@ -85,4 +85,11 @@ class EquipamentoClienteController:
         query = "SELECT id, modelo FROM equipamento_cliente WHERE ativo = 1"
         result = self.db.execute_query(query)
         return result
+    def CarregarImpressaoEquipamento(self,id):
+        query = '''SELECT equipamento_cliente.id, equipamento_cliente.modelo, equipamento_cliente.rpm, equipamento_cliente.polos, equipamento_cliente.fases, equipamento_cliente.tensao, m.nome AS nome_marca, equipamento_cliente.defeito 
+FROM equipamento_cliente  
+INNER JOIN marca AS m ON equipamento_cliente.marca_id = m.id 
+WHERE equipamento_cliente.id=?'''
+        data = (id,)
+        return self.db.execute_query(query, data)
         
