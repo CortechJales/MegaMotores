@@ -52,7 +52,12 @@ class MainWindow(QMainWindow):
         toolbar = self.addToolBar("Toolbar")
 
         logo_label = QLabel(self)
-        pixmap = QPixmap("img/mega.png")
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_imagens = os.path.join(diretorio_atual, 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_imagens, 'mega.png')
+        pixmap = QPixmap(caminho_imagem)
         scaled_pixmap = pixmap.scaled(340, 60)  # Ajustar o tamanho conforme necessário
         logo_label.setPixmap(scaled_pixmap)
         toolbar.addWidget(logo_label)
