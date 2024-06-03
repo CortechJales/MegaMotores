@@ -6,6 +6,7 @@ from marca.marca_controller import MarcaController
 from PyQt5.QtGui import QIcon
 import re
 import requests
+import os
 
 
 class ClienteUI(QWidget):
@@ -376,7 +377,12 @@ class AdicionarEditarClienteDialog(QDialog):
     def __init__(self, nome="", cep="", endereco="", numero="", cidade="", estado="", cpf_cnpj="", telefone=""):
         super().__init__()
         self.setWindowTitle("Adicionar Cliente")
-        self.setWindowIcon(QIcon("img/megamotores.png"))  # Adicione o ícone desejado
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem)) # Adicione o ícone desejado
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)  # Adicione margens para espaçamento
@@ -578,7 +584,12 @@ class DetalhesClienteDialog(QDialog):
         
         self.controller_marca = MarcaController()
         self.setWindowTitle("Detalhes do Cliente")
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
@@ -873,7 +884,12 @@ class AdicionarEditarEquipamentoDialog(QDialog):
     def __init__(self, modelo="", rpm="", polos="", fases="", tensao="", marca_id="", defeito="", marcas_disponiveis=None):
         super().__init__()
         self.setWindowTitle("Adicionar Equipamento")
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
         self.controller = MarcaController()
         self.marca_id=marca_id
         layout = QVBoxLayout()

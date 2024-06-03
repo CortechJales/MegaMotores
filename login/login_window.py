@@ -5,14 +5,20 @@ from PyQt5.QtGui import QIcon, QPixmap
 
 import bcrypt
 import sys
+import os
 
 class LoginWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login")
         self.setGeometry(300, 300, 400, 250)
-        self.setWindowIcon(QIcon("img/logotipo.png"))
-        self.db = Database('database/gerenciamento_ordens_servico.db')  # Conectar ao banco de dados
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'logotipo.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
+        self.db = Database()  # Conectar ao banco de dados
         self.create_table()  # Criar a tabela se não existir
 
         layout = QVBoxLayout()
@@ -20,7 +26,12 @@ class LoginWindow(QDialog):
 
         # Adicionar logo
         logo_label = QLabel(self)
-        pixmap = QPixmap("img/mega.png")
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem_mega = os.path.join(pasta_img, 'mega.png')
+        pixmap = QPixmap(caminho_imagem_mega)
         scaled_pixmap = pixmap.scaled(340, 60)  # Ajustar o tamanho conforme necessário
         logo_label.setPixmap(scaled_pixmap)
         layout.addWidget(logo_label)

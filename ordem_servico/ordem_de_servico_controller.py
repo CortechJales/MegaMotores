@@ -1,7 +1,7 @@
 from database.database import Database
 class OrdemDeServicoController:
     def __init__(self):
-        self.db = Database('database/gerenciamento_ordens_servico.db')    
+        self.db = Database()    
     
     def create_table(self):
         sql = '''CREATE TABLE IF NOT EXISTS ordens_servico (

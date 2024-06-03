@@ -432,8 +432,14 @@ class OrdemDeServicoUI(QWidget):
 class AdicionarEditarOrdemDialog(QDialog):
     def __init__(self, cliente_id="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
         super().__init__()
+       
         self.setWindowTitle("Adicionar Ordem de serviço")
-        self.setWindowIcon(QIcon("img/megamotores.png"))  # Adicione o ícone desejado
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))  # Adicione o ícone desejado
         self.cliente_id=cliente_id
         self.equipamento_id=equipamento_id
         
@@ -598,7 +604,12 @@ class DetalhesOrdemDialog(QDialog):
         self.controller_ordem = OrdemDeServicoController()
 
         self.setWindowTitle("Detalhes da Ordem de serviço")
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
@@ -784,15 +795,24 @@ class DetalhesOrdemDialog(QDialog):
                     # Obter os itens da ordem de serviço
                     itens_ordem = self.itens_ordem
 
+                                        # Obter o diretório atual do script Python
+                    diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+
                     # Path para salvar o arquivo PDF temporário
-                    pdf_path = 'ordem_servico/temp.pdf'
+                    pdf_path = os.path.join(diretorio_atual,'temp.pdf')
 
                     # Renderiza o template HTML com os dados fornecidos
-                    template_path = 'ordem_servico/teste.html'
+                    template_path = os.path.join(diretorio_atual,'teste.html')
+
+                    # Verifica se os arquivos existem nos caminhos especificados
+                    if not os.path.exists(template_path):
+                        print(f"Arquivo HTML não encontrado em: {template_path}")
+                        # Adicione aqui qualquer lógica de tratamento de erro, se necessário
+
                     html_content = self.render_template(template_path, cliente_info=cliente_info, equipamento_info=equipamento_info, itens_ordem=itens_ordem, ordem_info=ordem_info)
 
                     # Path para salvar o arquivo HTML temporário
-                    html_temp_path = 'ordem_servico/temp_ordem.html'
+                    html_temp_path = os.path.join(diretorio_atual,'temp_ordem.html')
 
                     # Adicione a codificação UTF-8 ao abrir o arquivo HTML temporário para escrita
                     with open(html_temp_path, 'w', encoding='utf-8') as f:
@@ -992,7 +1012,12 @@ class ImprimirOrdemDialog(QDialog):
         self.controller_ordem = OrdemDeServicoController()
 
         self.setWindowTitle("Imprimir Ordem de servço")
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
@@ -1069,7 +1094,12 @@ class AdicionarEditarEquipamentoDialog(QDialog):
     def __init__(self, produto_id="", quantidade="", produtos_disponiveis=None):
         super().__init__()
         self.setWindowTitle("Adicionar Materias utilizados")
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
         self.controller = ProdutoController()
         self.produto_id=produto_id
         layout = QVBoxLayout()

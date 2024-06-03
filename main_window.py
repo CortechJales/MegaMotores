@@ -7,6 +7,7 @@ from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
 from PyQt5.QtGui import QIcon, QFont,QPixmap
 import sys
+import os
 
 
 
@@ -16,7 +17,12 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Sistema de Gerenciamento")
         self.setGeometry(100, 100, 900, 600)
-        self.setWindowIcon(QIcon("img/megamotores.png"))
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_imagens = os.path.join(diretorio_atual, 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_imagens, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem))
 
         self.central_widget = QStackedWidget()
         self.setCentralWidget(self.central_widget)

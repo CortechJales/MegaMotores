@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QDialog, QDoubleSpinBox, QMessageBox,QCheck
 from PyQt5.QtCore import Qt
 from marca.marca_controller import MarcaController
 from PyQt5.QtGui import QIcon,QDoubleValidator
+import os
 
 class MarcaUI(QWidget):
     def __init__(self,user_type):
@@ -310,7 +311,12 @@ class AdicionarEditarMarcaDialog(QDialog):
     def __init__(self, nome=""):
         super().__init__()
         self.setWindowTitle("Adicionar Marca")
-        self.setWindowIcon(QIcon("img/megamotores.png"))  # Adicione o ícone desejado
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        # Subindo um nível para acessar a pasta img
+        pasta_img = os.path.join(diretorio_atual, '..', 'img')
+        # Path para a imagem específica
+        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
+        self.setWindowIcon(QIcon(caminho_imagem)) # Adicione o ícone desejado
         self.controller = MarcaController()
 
         layout = QVBoxLayout()
