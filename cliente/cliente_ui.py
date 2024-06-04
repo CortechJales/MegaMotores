@@ -421,7 +421,7 @@ class AdicionarEditarClienteDialog(QDialog):
 
         # Adicionando siglas dos estados ao QComboBox
         estados_brasileiros = [
-            "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+            "","AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
             "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
             "SP", "SE", "TO"
         ]
@@ -437,15 +437,19 @@ class AdicionarEditarClienteDialog(QDialog):
         # Adicionando botões de seleção para Pessoa Física e Jurídica
         self.pessoa_fisica = QRadioButton("Pessoa Física (CPF)")
         self.pessoa_juridica = QRadioButton("Pessoa Jurídica (CNPJ)")
+        self.nao_informar = QRadioButton("Não informar")
         self.pessoa_fisica.setChecked(True)  # Definindo Pessoa Física como padrão
         self.tipo_pessoa_group = QButtonGroup()
         self.tipo_pessoa_group.addButton(self.pessoa_fisica)
         self.tipo_pessoa_group.addButton(self.pessoa_juridica)
+        self.tipo_pessoa_group.addButton(self.nao_informar)
         self.tipo_pessoa_group.buttonClicked.connect(self.update_cpf_cnpj_mask)
 
         tipo_pessoa_layout = QHBoxLayout()
         tipo_pessoa_layout.addWidget(self.pessoa_fisica)
         tipo_pessoa_layout.addWidget(self.pessoa_juridica)
+        
+        tipo_pessoa_layout.addWidget(self.nao_informar)
         form_layout.addRow(QLabel("Tipo de Pessoa:"), tipo_pessoa_layout)
 
         form_layout.addRow(QLabel("CPF/CNPJ:"), self.cpf_cnpj)
@@ -492,19 +496,22 @@ class AdicionarEditarClienteDialog(QDialog):
 
     def validate_fields(self):
         # Verificar se todos os campos estão preenchidos
-        if not all([self.nome.text(), self.cep.text(), self.endereco.text(), self.numero.text(), self.cidade.text(), self.estado.currentText(), self.cpf_cnpj.text(), self.telefone.text()]):
-            QMessageBox.warning(self, "Erro", "Todos os campos devem ser preenchidos.")
+        if not all([self.nome.text()]):
+            QMessageBox.warning(self, "Erro", "O nome deve estar preenchido.")
             return False
 
-        # Verificar formato do CEP
-        if not re.match(r'^\d{5}-\d{3}$', self.cep.text()):
-            QMessageBox.warning(self, "Erro", "CEP inválido. Use o formato 00000-000.")
-            return False
-
-        # Verificar formato do CPF/CNPJ
-        if not (self.validate_cpf(self.cpf_cnpj.text()) or self.validate_cnpj(self.cpf_cnpj.text())):
-            QMessageBox.warning(self, "Erro", "CPF/CNPJ inválido.")
-            return False
+    
+         # Verificar formato do CPF/CNPJ
+        cpf_cnpj = self.cpf_cnpj.text().strip()  # Remover espaços em branco
+        if cpf_cnpj:  # Verificar se o campo não está vazio
+            if self.pessoa_fisica.isChecked():
+                if not self.validate_cpf(cpf_cnpj):
+                    QMessageBox.warning(self, "Erro", "CPF inválido.")
+                    return False
+            elif self.pessoa_juridica.isChecked():
+                if not self.validate_cnpj(cpf_cnpj):
+                    QMessageBox.warning(self, "Erro", "CNPJ inválido.")
+                    return False
 
         return True
 
@@ -560,7 +567,10 @@ class AdicionarEditarClienteDialog(QDialog):
         if self.pessoa_fisica.isChecked():
             self.cpf_cnpj.setInputMask('000.000.000-00;_')
         else:
-            self.cpf_cnpj.setInputMask('00.000.000/0000-00;_')
+            if self.pessoa_juridica.isChecked():
+                self.cpf_cnpj.setInputMask('00.000.000/0000-00;_')
+            else:
+                self.cpf_cnpj.setInputMask('')  
 
     def apply_initial_cpf_cnpj_mask(self, cpf_cnpj):
         cpf_cnpj = re.sub(r'\D', '', cpf_cnpj)

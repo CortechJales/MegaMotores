@@ -904,7 +904,7 @@ class DetalhesOrdemDialog(QDialog):
 
     def show_add_item_dialog(self):
         produtos_disponiveis = self.controller_produto.FiltrarProduto(True)
-        dialog = AdicionarEditarEquipamentoDialog(produtos_disponiveis=produtos_disponiveis)
+        dialog = AdicionarEditarItemDialog(produtos_disponiveis=produtos_disponiveis)
        
         if dialog.exec_():
             produto_id = dialog.combo_produto.currentText().split(' - ')[0]
@@ -935,7 +935,7 @@ class DetalhesOrdemDialog(QDialog):
                 
         
             # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
-            dialog = AdicionarEditarEquipamentoDialog(produto, quantidade,produtos_disponiveis)
+            dialog = AdicionarEditarItemDialog(produto, quantidade,produtos_disponiveis)
             if dialog.exec_(): 
                 novo_produto_id= dialog.combo_produto.currentText().split(' - ')[0]
                 novo_quantidade = dialog.quantidade.text()
@@ -951,146 +951,8 @@ class DetalhesOrdemDialog(QDialog):
 
             # Exibindo uma mensagem com o conteúdo do campo clicado
         QMessageBox.information(self, "Detalhes do Equipamento", equipamento_info)
-    def show_ordem_imprimir(self):
-        selected_row = self.ordem_table.currentRow()
-        if selected_row != -1:
-            id_ordem = int(self.ordem_table.item(selected_row, 0).text())
-        
-        # Método para buscar os dados da ordem pelo ID
-            cliente= self.controll
-            ordens = self.controller.ListarOrdemServico(id_ordem)
-        
-            if ordens:
-                
-                ordem = ordens[0] 
-                cliente = ordem[1]  
-                equipamento = ordem[2]  
-                data_inicio = ordem[3]  
-                data_final = ordem[4]
-                mao_de_obra = ordem[5]
-                valor_total = ordem[6]
-
-                cliente_info = {
-                'Código': id_ordem,
-                'Cliente': cliente,
-                'Equipamento': equipamento,
-                'Data de início': data_inicio,
-                'Data Final': data_final,
-                'Mão de obra': mao_de_obra,
-                'Valor Total': valor_total
-            }
-            itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
-
-            dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
-        
-        # Definindo o tamanho mínimo e máximo da janela
-            dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
-            dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
-
-            dialog.exec_()
-
-        else:
-            QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
-
-class ImprimirOrdemDialog(QDialog):
-    def __init__(self,cliente_info,equip_info, ordem_info, itens_ordem):
-        super().__init__()
-
-        self.cliente_info = cliente_info
-        self.equip_info = equip_info
-        self.ordem_info = ordem_info
-        self.itens_ordem = itens_ordem
-
-        self.controller_cliente=ClienteController()
-
-        self.controller_equipamento=EquipamentoClienteController()
-
-        self.controller_item = ItemOrdemController()  
-        
-        self.controller_produto = ProdutoController()
-        
-        self.controller_ordem = OrdemDeServicoController()
-
-        self.setWindowTitle("Imprimir Ordem de servço")
-        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        # Subindo um nível para acessar a pasta img
-        pasta_img = os.path.join(diretorio_atual, '..', 'img')
-        # Path para a imagem específica
-        caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
-        self.setWindowIcon(QIcon(caminho_imagem))
-
-        layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
-
-        # Barra de ferramentas com botões de ação
-        toolbar = QToolBar("Barra de Ferramentas")
-        toolbar.setStyleSheet("""
-            QToolBar {
-                background-color: #ecf0f1;
-                padding: 10px;
-                border-radius: 10px;
-            }
-            QToolButton {
-                background-color: #3498db;
-                color: white;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 5px;
-                margin-right: 5px;
-            }
-            QToolButton:hover {
-                background-color: #2980b9;
-            }
-        """)
-        layout.addWidget(toolbar)
-       
-
-        
-        action_print = QAction("Imprimir", self)      
-        
-        toolbar.addAction(action_print)
-        
-        action_print.triggered.connect(self.print_order)
-        self.setLayout(layout)
-
-    
-    # Métodos para manipulação de equipamentos...
-
-    def print_order(self):
-        # Criar uma instância da impressora
-        printer = QPrinter(QPrinter.HighResolution)
-        dialog = QPrintDialog(printer, self)
-        
-        if dialog.exec_() == QPrintDialog.Accepted:
-            # Configurar a escala de impressão para o tamanho da tela
-            self.setFixedSize(self.sizeHint())
-
-            # Renderizar a tela de detalhes na impressora
-            self.renderContents(printer)
-
-    def renderContents(self, printer):
-        # Criar um QPainter para desenhar na impressora
-        painter = QPainter()
-        
-        # Iniciar a pintura com a impressora como dispositivo de pintura
-        painter.begin(printer)
-        
-        # Configurar a escala de impressão para preencher a página inteira
-        screen_size = self.size()
-        printer_size = printer.pageRect(QPrinter.DevicePixel)
-        scale_factor = min(printer_size.width() / screen_size.width(),
-                          printer_size.height() / screen_size.height())
-        painter.scale(scale_factor, scale_factor)
-
-        # Renderizar o conteúdo da janela na impressora
-        self.render(painter)
-
-        # Finalizar a pintura
-        painter.end()
-
-
-            
-class AdicionarEditarEquipamentoDialog(QDialog):
+   
+class AdicionarEditarItemDialog(QDialog):
     def __init__(self, produto_id="", quantidade="", produtos_disponiveis=None):
         super().__init__()
         self.setWindowTitle("Adicionar Materias utilizados")

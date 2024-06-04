@@ -3,6 +3,10 @@ from PyQt5.QtCore import Qt
 from produto.produto_controller import ProdutoController
 from PyQt5.QtGui import QIcon,QDoubleValidator
 import os
+from jinja2 import Template
+from datetime import datetime
+import pdfkit
+import subprocess
 
 class ProdutoUI(QWidget):
     def __init__(self,user_type):
@@ -52,7 +56,11 @@ class ProdutoUI(QWidget):
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_inactive)
             filter_layout.addWidget(self.btn_inactive)
-
+        
+        self.btn_print = QPushButton("Imprimir")
+        self.btn_print.setStyleSheet(filter_button_style)
+        self.btn_print.clicked.connect(self.print_order)
+        filter_layout.addWidget(self.btn_print)
         layout.addLayout(filter_layout)
 
         # Tabela de clientes
@@ -149,6 +157,7 @@ class ProdutoUI(QWidget):
 
     def filter_table(self):
         filter_text = self.filter_input.text().lower()
+        visible_products = []
         for row in range(self.product_table.rowCount()):
             match = False
             for col in range(self.product_table.columnCount()):
@@ -157,6 +166,18 @@ class ProdutoUI(QWidget):
                     match = True
                     break
             self.product_table.setRowHidden(row, not match)
+            if match:
+                # Adiciona o produto visível à lista
+                id = self.product_table.item(row, 0).text()
+                descricao = self.product_table.item(row, 1).text()
+                valor = self.product_table.item(row, 2).text()
+                visible_products.append({
+                    'id': id,
+                    'descricao': descricao,
+                    'valor': valor,
+                })
+        return visible_products
+
 
     def filter_all(self):
         produtos = self.controller.ListarProduto()
@@ -288,7 +309,60 @@ class ProdutoUI(QWidget):
                     QMessageBox.warning(self, "Aviso", "Produo não encontrado.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Produto para Ativar.")   
+    
+    def print_order(self):
+        
+        visible_products = self.filter_table()
+        
+        data_atual = datetime.now().strftime("%d/%m/%Y")
+        info = {
+                        'data': data_atual
+                    }
+ # Obter os itens da ordem de serviço
 
+                                        # Obter o diretório atual do script Python
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+
+                    # Path para salvar o arquivo PDF temporário
+        pdf_path = os.path.join(diretorio_atual,'temp.pdf')
+
+                    # Renderiza o template HTML com os dados fornecidos
+        template_path = os.path.join(diretorio_atual,'teste.html')
+
+                    # Verifica se os arquivos existem nos caminhos especificados
+        if not os.path.exists(template_path):
+            print(f"Arquivo HTML não encontrado em: {template_path}")
+                        # Adicione aqui qualquer lógica de tratamento de erro, se necessário
+
+        html_content = self.render_template(template_path,  visible_products=visible_products, info=info)
+
+                    # Path para salvar o arquivo HTML temporário
+        html_temp_path = os.path.join(diretorio_atual,'temp_ordem.html')
+
+                    # Adicione a codificação UTF-8 ao abrir o arquivo HTML temporário para escrita
+        with open(html_temp_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+
+                    # Converte o HTML para PDF
+        configuration = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe')
+        pdfkit.from_file(html_temp_path, pdf_path, configuration=configuration, options={'encoding': "UTF-8"})
+
+                                    
+        if os.path.exists(pdf_path):
+                            
+                subprocess.run(['cmd', '/c', 'start', '', '/WAIT', pdf_path], shell=True)  
+        else:
+
+            print("O arquivo PDF não foi encontrado.")                   
+                
+                
+
+    def render_template(self, template_path, **kwargs):
+        with open(template_path, 'r', encoding='utf-8') as f:  # Adicione a codificação UTF-8 ao abrir o arquivo HTML
+            template_string = f.read()
+        template = Template(template_string)
+        return template.render(**kwargs)
+    
     def show_add_produto_dialog(self):
         dialog = AdicionarProdutoDialog()
         if dialog.exec_():
