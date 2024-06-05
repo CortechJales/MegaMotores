@@ -819,7 +819,7 @@ class DetalhesOrdemDialog(QDialog):
                         f.write(html_content)
 
                     # Converte o HTML para PDF
-                    configuration = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files (x86)\wkhtmltopdf\bin\wkhtmltopdf.exe')
+                    configuration = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
                     pdfkit.from_file(html_temp_path, pdf_path, configuration=configuration, options={'encoding': "UTF-8"})
 
                                     
