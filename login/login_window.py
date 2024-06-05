@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QLineEdit, QPush
 from database.database import Database
 from PyQt5.QtCore import QObject, pyqtSignal, Qt
 from PyQt5.QtGui import QIcon, QPixmap
-
+from datetime import datetime
 import bcrypt
 import sys
 import os
@@ -19,6 +19,10 @@ class LoginWindow(QDialog):
         caminho_imagem = os.path.join(pasta_img, 'logotipo.png')
         self.setWindowIcon(QIcon(caminho_imagem))
         self.db = Database()  # Conectar ao banco de dados
+        if datetime.now().weekday() == 4:
+            self.db.fazer_backup_e_enviar_para_google_drive()
+        if datetime.now().weekday() == 0:
+            self.db.excluir_backup_local()
         self.create_table()  # Criar a tabela se não existir
 
         layout = QVBoxLayout()
