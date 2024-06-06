@@ -103,8 +103,8 @@ class OrdemDeServicoUI(QWidget):
                 color: black;
             }
         """)
-        self.ordem_table.setColumnCount(8)
-        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Ativo'])
+        self.ordem_table.setColumnCount(9)
+        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Observação','Ativo'])
         self.ordem_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.ordem_table)
 
@@ -201,7 +201,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 7: 
+                if column_number == 8: 
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -224,7 +224,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 7:  
+                if column_number == 8:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -247,7 +247,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 7:  
+                if column_number == 8:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -260,16 +260,16 @@ class OrdemDeServicoUI(QWidget):
                 else:
                     self.ordem_table.setItem(row_number, column_number, item)
 
-    def add_ordem(self, cliente, equipamento, data_inicio, mao_de_obra ):
+    def add_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra ):
         valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
         valor_arredondado = round(valor_numerico, 2)
-        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado)
+        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado, observacao)
         self.filter_active() 
                         
-    def edit_ordem(self, cliente, equipamento, data_inicio, mao_de_obra,id):
+    def edit_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra,id):
         valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
         valor_arredondado = round(valor_numerico, 2)
-        self.controller.EditarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado,id)
+        self.controller.EditarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado,observacao,id)
         self.filter_active()  
 
 
@@ -348,11 +348,12 @@ class OrdemDeServicoUI(QWidget):
         if dialog.exec_():
             
             cliente = dialog.combo_cliente.currentText().split(' - ')[0]
+            observacao = dialog.observacao.text()
             equipamento = dialog.combo_equipamento.currentText().split(' - ')[0]
             data_inicio = dialog.data_inicio_edit.text()
             mao_de_obra = dialog.mao_de_obra.text()
             
-            self.add_ordem(cliente, equipamento, data_inicio, mao_de_obra)
+            self.add_ordem(cliente,observacao, equipamento, data_inicio, mao_de_obra)
    
     def show_edit_ordem_dialog(self):
         selected_row = self.ordem_table.currentRow()
@@ -368,19 +369,21 @@ class OrdemDeServicoUI(QWidget):
                 equipamento = ordem[2]  # Índice do equipamento na tupla
                 data_inicio = ordem[3]  # Índice da data de início na tupla
                 mao_de_obra = ordem[5]
+                observacao = ordem[7]
             
                 clientes_disponiveis = self.controller_cliente.BuscarCliente()
                 
                 print(f"cliente que chegou antes de editar: {cliente}")
                 equipamentos_disponiveis = self.controller_equipamento.BuscarEquipamentos()
-                dialog = AdicionarEditarOrdemDialog(cliente, equipamento, data_inicio, mao_de_obra,clientes_disponiveis, equipamentos_disponiveis)
+                dialog = AdicionarEditarOrdemDialog(cliente, observacao, equipamento, data_inicio, mao_de_obra,clientes_disponiveis, equipamentos_disponiveis)
                 if dialog.exec_():
                     novo_cliente = dialog.combo_cliente.currentText().split(' - ')[0]
+                    novo_observacao = dialog.observacao.text()
                     novo_equipamento = dialog.combo_equipamento.currentText().split(' - ')[0]
                     novo_inicio = dialog.data_inicio_edit.text()
                     novo_mao = dialog.mao_de_obra.text()
                 
-                    self.edit_ordem(novo_cliente, novo_equipamento, novo_inicio, novo_mao, id_ordem)
+                    self.edit_ordem(novo_cliente,novo_observacao, novo_equipamento, novo_inicio, novo_mao, id_ordem)
             else:
                 QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
         else:
@@ -403,6 +406,7 @@ class OrdemDeServicoUI(QWidget):
                 data_final = ordem[4]
                 mao_de_obra = ordem[5]
                 valor_total = ordem[6]
+                observacao = ordem[7]
 
                 cliente_info = {
                 'Código': id_ordem,
@@ -411,7 +415,8 @@ class OrdemDeServicoUI(QWidget):
                 'Data de início': data_inicio,
                 'Data Final': data_final,
                 'Mão de obra': mao_de_obra,
-                'Valor Total': valor_total
+                'Valor Total': valor_total,
+                'Observação': observacao
             }
             itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
 
@@ -430,7 +435,7 @@ class OrdemDeServicoUI(QWidget):
 
 
 class AdicionarEditarOrdemDialog(QDialog):
-    def __init__(self, cliente_id="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
+    def __init__(self, cliente_id="",observacao="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
         super().__init__()
        
         self.setWindowTitle("Adicionar Ordem de serviço")
@@ -456,6 +461,7 @@ class AdicionarEditarOrdemDialog(QDialog):
         form_layout = QFormLayout()
 
         self.combo_cliente = QComboBox()
+        self.observacao = QLineEdit(observacao)
         self.combo_equipamento =  QComboBox()
         self.data_inicio_edit = QDateEdit()
         self.mao_de_obra = QDoubleSpinBox()
@@ -486,11 +492,13 @@ class AdicionarEditarOrdemDialog(QDialog):
             }
         """
         self.combo_cliente.setStyleSheet(style_sheet)
+        self.observacao.setStyleSheet(style_sheet)
         self.combo_equipamento.setStyleSheet(style_sheet)
         self.data_inicio_edit.setStyleSheet(style_sheet)
         self.mao_de_obra.setStyleSheet(style_sheet)
         
         form_layout.addRow(QLabel("Cliente:"), self.combo_cliente)
+        form_layout.addRow(QLabel("Observação:"), self.observacao)
         form_layout.addRow(QLabel("Equipamento:"), self.combo_equipamento)
         form_layout.addRow(QLabel("Data Início:"), self.data_inicio_edit)
         form_layout.addRow(QLabel("Mão de obra:"), self.mao_de_obra)
@@ -734,13 +742,15 @@ class DetalhesOrdemDialog(QDialog):
             mao_de_obra = ord[5]
             valor_total = ord[6]
             total_material = ord[7]
+            observacao = ord[8]
 
             ordem_info = {
                     'Data_inicial': data_inicio,
                     'Data_final': data_final,
                     'mao_de_obra': mao_de_obra,
                     'Total_ordem': valor_total,
-                    'Total_material': total_material
+                    'Total_material': total_material,
+                    'Observacao': observacao
                     
                 }
             

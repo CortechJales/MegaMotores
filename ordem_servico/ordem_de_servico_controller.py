@@ -11,6 +11,7 @@ class OrdemDeServicoController:
                       data_inicio DATA,
                       data_final DATA,
                       mao_de_obra NUMERIC(10, 2),
+                      observacao TEXT,
                       fechada BOOLEAN,
                       ativo BOOLEAN,
                       FOREIGN KEY(cliente_id) REFERENCES cliente(id),
@@ -34,6 +35,7 @@ class OrdemDeServicoController:
             ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2
         )
     END AS valor_total,
+    ordens_servico.observacao,
     ordens_servico.ativo
 FROM 
     ordens_servico 
@@ -70,6 +72,7 @@ GROUP BY
         WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
         ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
     END AS valor_total,
+    ordens_servico.observacao,
     ordens_servico.ativo
 FROM 
     ordens_servico 
@@ -101,6 +104,7 @@ GROUP BY
         WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
         ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
     END AS valor_total,
+    ordens_servico.observacao,
     ordens_servico.ativo
 FROM 
     ordens_servico 
@@ -125,25 +129,26 @@ GROUP BY
         data = (tipo,)
         return self.db.execute_query(query, data)
     
-    def CadastrarOrdemServico(self, cliente, equipamento, data_inicio, mao_de_obra):
+    def CadastrarOrdemServico(self, cliente, equipamento, data_inicio, mao_de_obra,observacao):
         query = '''
             INSERT INTO ordens_servico 
-            (cliente_id, equipamento_id, data_inicio, mao_de_obra, fechada, ativo) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (cliente_id, equipamento_id, data_inicio, mao_de_obra,observacao, fechada, ativo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         '''
-        data = (cliente, equipamento, data_inicio, mao_de_obra, False, True)
+        data = (cliente, equipamento, data_inicio, mao_de_obra,observacao, False, True)
         self.db.execute_query_no_return(query, data)
 
-    def EditarOrdemServico(self, cliente, equipamento, data_inicio, mao_de_obra, id):
+    def EditarOrdemServico(self, cliente, equipamento, data_inicio, mao_de_obra,observacao, id):
         query = '''
         UPDATE ordens_servico 
         SET cliente_id = ?,
             equipamento_id = ?,
             data_inicio = ?,
-            mao_de_obra = ?
+            mao_de_obra = ?,
+            observacao = ?
         WHERE id = ?
     '''
-        data = (cliente, equipamento, data_inicio, mao_de_obra, id)
+        data = (cliente, equipamento, data_inicio, mao_de_obra,observacao, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarOrdemServico(self, id):    
@@ -205,7 +210,8 @@ GROUP BY
                         WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
                         ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
                     END AS valor_total,
-                    printf('%.2f', COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0)) AS total_itens_ordem
+                    printf('%.2f', COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0)) AS total_itens_ordem,
+                    ordens_servico.observacao
                 FROM 
                     ordens_servico 
                 LEFT JOIN 
