@@ -369,7 +369,7 @@ class OrdemDeServicoUI(QWidget):
                 equipamento = ordem[2]  # Índice do equipamento na tupla
                 data_inicio = ordem[3]  # Índice da data de início na tupla
                 mao_de_obra = ordem[5]
-                observacao = ordem[7]
+                observacao = ordem[6]
             
                 clientes_disponiveis = self.controller_cliente.BuscarCliente()
                 
@@ -461,7 +461,7 @@ class AdicionarEditarOrdemDialog(QDialog):
         form_layout = QFormLayout()
 
         self.combo_cliente = QComboBox()
-        self.observacao = QLineEdit(observacao)
+        self.observacao = QLineEdit(str(observacao))
         self.combo_equipamento =  QComboBox()
         self.data_inicio_edit = QDateEdit()
         self.mao_de_obra = QDoubleSpinBox()
