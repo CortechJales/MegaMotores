@@ -789,7 +789,8 @@ class DetalhesOrdemDialog(QDialog):
                     fases = equip[4]
                     tensao = equip[5]
                     marca = equip[6]
-                    defeito = equip[7]
+                    potencia = equip[7]
+                    defeito = equip[8]
                 
 
                     equipamento_info = {
@@ -800,7 +801,7 @@ class DetalhesOrdemDialog(QDialog):
                         'Tensao': tensao,
                         'Marca': marca,
                         'Defeito': defeito,
-                        'Potencia': defeito
+                        'Potencia': potencia
                     }
 
                     # Obter os itens da ordem de serviço
@@ -1010,7 +1011,7 @@ class AdicionarEditarItemDialog(QDialog):
 
         if valor_unitario:
             # Substitui a vírgula pelo ponto e converte para float
-            valor_float = float(valor_unitario.replace(',', '.'))
+            valor_float = float(str(valor_unitario).replace(',', '.'))
             self.valor_unitario.setValue(valor_float)
 
         self.combo_produto.setStyleSheet(style_sheet)

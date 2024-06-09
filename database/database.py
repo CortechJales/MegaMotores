@@ -13,7 +13,7 @@ class Database:
         # Obtém o diretório do script atual
         self.diretorio_atual = os.path.dirname(os.path.abspath(__file__))
         # Constrói o caminho absoluto para o arquivo do banco de dados
-        self.caminho_banco_dados = os.path.join(self.diretorio_atual, 'backup_2024-06-07.db')
+        self.caminho_banco_dados = os.path.join(self.diretorio_atual, 'gerenciamento_ordens_servico.db')
         self.connection = sqlite3.connect(self.caminho_banco_dados)
         self.cursor = self.connection.cursor()
       # Define o ID da pasta no Google Drive onde o arquivo será enviado

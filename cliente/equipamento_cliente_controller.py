@@ -14,6 +14,7 @@ class EquipamentoClienteController:
         tensao TEXT,
         marca_id TEXT,
         defeito TEXT,
+        potencia TEXT,
         cliente_id INTEGER,
         ativo BOOLEAN,
         FOREIGN KEY(cliente_id) REFERENCES cliente(id)
@@ -23,10 +24,10 @@ class EquipamentoClienteController:
         '''
         self.db.create_table(sql)
     def ListarEquipamentoCliente(self, cliente_id):
-        query = "SELECT id, modelo, rpm, polos, fases, tensao, marca_id, defeito FROM equipamento_cliente WHERE cliente_id = ? and ativo=1"
+        query = "SELECT id, modelo, rpm, polos, fases, tensao, marca_id, potencia, defeito FROM equipamento_cliente WHERE cliente_id = ? and ativo=1"
         data = (cliente_id,)
         result = self.db.execute_query(query, data)
-        equipamentos = [{'id': row[0], 'modelo': row[1],'rpm': row[2],'polos': row[3],'fases': row[4],'tensao': row[5],'marca_id': row[6],'defeito': row[7]} for row in result]
+        equipamentos = [{'id': row[0], 'modelo': row[1],'rpm': row[2],'polos': row[3],'fases': row[4],'tensao': row[5],'marca_id': row[6],'potencia': row[7],'defeito': row[8]} for row in result]
         return equipamentos
     
     def CarregarEquipamentoCliente(self, id):
@@ -39,22 +40,22 @@ class EquipamentoClienteController:
         data = (tipo,)
         return self.db.execute_query(query,data)
     
-    def CadastrarEquipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id):
+    def CadastrarEquipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, potencia, defeito, cliente_id):
         query = '''
             INSERT INTO equipamento_cliente 
-            (modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id, ativo) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (modelo, rpm, polos, fases, tensao, marca_id, potencia, defeito, cliente_id, ativo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         '''
-        data = (modelo, rpm, polos, fases, tensao, marca_id, defeito, cliente_id, True)
+        data = (modelo, rpm, polos, fases, tensao, marca_id,potencia, defeito, cliente_id, True)
         self.db.execute_query_no_return(query, data)
 
-    def EditarequipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, defeito, id):
+    def EditarequipamentoCliente(self, modelo, rpm, polos, fases, tensao, marca_id, potencia, defeito, id):
         query = '''
             UPDATE equipamento_cliente 
-            SET modelo=?, rpm=?, polos=?, fases=?, tensao=?, marca_id=?, defeito=? 
+            SET modelo=?, rpm=?, polos=?, fases=?, tensao=?, marca_id=?,potencia=?, defeito=? 
             WHERE id=?
         '''
-        data = (modelo, rpm, polos, fases, tensao, marca_id, defeito, id)
+        data = (modelo, rpm, polos, fases, tensao, marca_id,potencia, defeito, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarEquipamentoCliente(self, id):    
@@ -86,7 +87,7 @@ class EquipamentoClienteController:
         result = self.db.execute_query(query)
         return result
     def CarregarImpressaoEquipamento(self,id):
-        query = '''SELECT equipamento_cliente.id, equipamento_cliente.modelo, equipamento_cliente.rpm, equipamento_cliente.polos, equipamento_cliente.fases, equipamento_cliente.tensao, m.nome AS nome_marca, equipamento_cliente.defeito 
+        query = '''SELECT equipamento_cliente.id, equipamento_cliente.modelo, equipamento_cliente.rpm, equipamento_cliente.polos, equipamento_cliente.fases, equipamento_cliente.tensao, m.nome AS nome_marca,equipamento_cliente.potencia, equipamento_cliente.defeito 
 FROM equipamento_cliente  
 INNER JOIN marca AS m ON equipamento_cliente.marca_id = m.id 
 WHERE equipamento_cliente.id=?'''
