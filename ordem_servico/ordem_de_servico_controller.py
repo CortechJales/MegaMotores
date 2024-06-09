@@ -30,9 +30,9 @@ class OrdemDeServicoController:
     ordens_servico.data_final,
     ordens_servico.mao_de_obra,
     CASE 
-        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN ordens_servico.mao_de_obra
+        WHEN COALESCE(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN ordens_servico.mao_de_obra
         ELSE ROUND(
-            ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2
+            ordens_servico.mao_de_obra + SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2
         )
     END AS valor_total,
     ordens_servico.observacao,
@@ -45,8 +45,6 @@ JOIN
     equipamento_cliente ON ordens_servico.equipamento_id = equipamento_cliente.id 
 LEFT JOIN 
     itens_ordem ON ordens_servico.id = itens_ordem.ordem_id 
-LEFT JOIN 
-    produto ON itens_ordem.produto_id = produto.id 
 GROUP BY 
     ordens_servico.id;
  
@@ -69,8 +67,8 @@ GROUP BY
     ordens_servico.data_final,
     printf('%.2f', ordens_servico.mao_de_obra) AS mao_de_obra,
     CASE 
-        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
-        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
+        WHEN COALESCE(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
+        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
     END AS valor_total,
     ordens_servico.observacao,
     ordens_servico.ativo
@@ -82,8 +80,6 @@ JOIN
     equipamento_cliente ON ordens_servico.equipamento_id = equipamento_cliente.id 
 LEFT JOIN 
     itens_ordem ON ordens_servico.id = itens_ordem.ordem_id 
-LEFT JOIN 
-    produto ON itens_ordem.produto_id = produto.id 
 WHERE 
     ordens_servico.ativo = 1 and ordens_servico.id=? 
 GROUP BY 
@@ -101,8 +97,8 @@ GROUP BY
     ordens_servico.data_final,
     printf('%.2f', ordens_servico.mao_de_obra) AS mao_de_obra,
     CASE 
-        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
-        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
+        WHEN COALESCE(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
+        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
     END AS valor_total,
     ordens_servico.observacao,
     ordens_servico.ativo
@@ -114,8 +110,6 @@ JOIN
     equipamento_cliente ON ordens_servico.equipamento_id = equipamento_cliente.id 
 LEFT JOIN 
     itens_ordem ON ordens_servico.id = itens_ordem.ordem_id 
-LEFT JOIN 
-    produto ON itens_ordem.produto_id = produto.id 
 WHERE 
     ordens_servico.ativo = ? 
 GROUP BY 

@@ -65,4 +65,12 @@ class ProdutoController:
         data = (id,)
         return self.db.execute_query(query, data)
     
+    def obter_valor_produto(self, id):
+        query = '''SELECT valor FROM produto WHERE id = ?;'''
+        data = (id,)
+        result = self.db.execute_query(query, data)
+        if result:
+            return float(result[0][0])  # Retorna o valor do primeiro resultado, convertido para float
+        else:
+            return None
         

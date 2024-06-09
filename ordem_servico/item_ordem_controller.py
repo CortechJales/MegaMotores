@@ -10,6 +10,7 @@ class ItemOrdemController:
                       ordem_id INTEGER,
                       produto_id INTEGER,
                       quantidade INTEGER,
+                      valor_unitario REAL,
                       FOREIGN KEY(ordem_id) REFERENCES ordens_servico(id),
                       FOREIGN KEY(produto_id) REFERENCES produtos(id)
                       )
@@ -21,8 +22,8 @@ class ItemOrdemController:
     itens_ordem.id AS id_item,
     produto.descricao AS produto_nome,
     itens_ordem.quantidade AS quantidade,
-    printf('%.2f', produto.valor) AS valor_unitario,
-    printf('%.2f', ROUND(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2)) AS valor_total
+    printf('%.2f', itens_ordem.valor_unitario) AS valor_unitario,
+    printf('%.2f', ROUND(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2)) AS valor_total
 FROM 
     itens_ordem 
 LEFT JOIN 
@@ -47,22 +48,22 @@ GROUP BY
         data = (id,)
         return self.db.execute_query(query,data)
        
-    def CadastrarItemOrdem(self, ordem_id, produto_id, quantidade ):
+    def CadastrarItemOrdem(self, ordem_id, produto_id, quantidade,valor_unitario ):
         query = '''
             INSERT INTO itens_ordem 
-            ( ordem_id, produto_id, quantidade) 
-            VALUES (?, ?, ?)
+            ( ordem_id, produto_id, quantidade, valor_unitario) 
+            VALUES (?, ?, ?, ?)
         '''
-        data = (ordem_id, produto_id, quantidade)
+        data = (ordem_id, produto_id, quantidade,valor_unitario)
         self.db.execute_query_no_return(query, data)
 
-    def EditarItemOrdem(self, produto_id, quantidade, id):
+    def EditarItemOrdem(self, produto_id, quantidade, valor_unitario, id):
         query = '''
             UPDATE itens_ordem 
-            SET  produto_id=?, quantidade=?
+            SET  produto_id=?, quantidade=?, valor_unitario=?
             WHERE id=?
         '''
-        data = ( produto_id, quantidade, id)
+        data = ( produto_id, quantidade,valor_unitario, id)
         self.db.execute_query_no_return(query, data)
     
     def DeletarItemOrdem(self, id):    

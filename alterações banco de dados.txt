@@ -1,0 +1,10 @@
+ALTER TABLE equipamento_cliente
+ADD COLUMN potencia TEXT;
+
+ALTER TABLE itens_ordem
+ADD COLUMN valor_unitario REAL;
+
+UPDATE itens_ordem
+SET valor_unitario = (
+    SELECT valor FROM produto WHERE produto.id = itens_ordem.produto_id
+);
