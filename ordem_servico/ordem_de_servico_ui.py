@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QMessageBox, QCheckBox,QDateEdit, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QRadioButton, QButtonGroup,QMessageBox, QCheckBox,QDateEdit, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt,QDate,QRectF
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from cliente.equipamento_cliente_controller import EquipamentoClienteController
@@ -799,11 +799,12 @@ class DetalhesOrdemDialog(QDialog):
                         'Fases': fases,
                         'Tensao': tensao,
                         'Marca': marca,
-                        'Defeito': defeito
+                        'Defeito': defeito,
+                        'Potencia': defeito
                     }
 
                     # Obter os itens da ordem de serviço
-                    itens_ordem = self.itens_ordem
+                    itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
 
                                         # Obter o diretório atual do script Python
                     diretorio_atual = os.path.dirname(os.path.abspath(__file__))
@@ -854,19 +855,19 @@ class DetalhesOrdemDialog(QDialog):
         template = Template(template_string)
         return template.render(**kwargs)
     
-    def add_item(self, produto_id, quantidade):
+    def add_item(self, produto_id, quantidade,valor_unitario):
        # Adiciona o novo equipamento à lista de equipamentos
        
         ordem_id = self.ordem_info['Código']
         
         # Obtém o ID do cliente
-        self.controller_item.CadastrarItemOrdem(ordem_id, produto_id, quantidade)
+        self.controller_item.CadastrarItemOrdem(ordem_id, produto_id, quantidade,valor_unitario)
         self.itens = self.controller_item.ListarItemOrdem(ordem_id)
         # Atualiza a tabela de equipamentos
         self.update_item_table()
    
-    def edit_item(self, produto_id, quantidade, id):
-        self.controller_item.EditarItemOrdem(produto_id, quantidade, id)
+    def edit_item(self, produto_id, quantidade,valor_unitario, id):
+        self.controller_item.EditarItemOrdem(produto_id, quantidade,valor_unitario, id)
         ordem_id = self.ordem_info['Código']
         self.itens = self.controller_item.ListarItemOrdem(ordem_id)  # Atualiza a lista de itens
         self.update_item_table()  # Atualiza a tabela
@@ -921,9 +922,10 @@ class DetalhesOrdemDialog(QDialog):
             
             quantidade = dialog.quantidade.text()
             
+            valor_unitario = dialog.valor_unitario.text()
             
 
-            self.add_item(produto_id,quantidade)
+            self.add_item(produto_id,quantidade,valor_unitario)
     
     def show_edit_item_dialog(self):
         selected_row = self.item_table.currentRow()
@@ -936,7 +938,8 @@ class DetalhesOrdemDialog(QDialog):
             if itens:
                 item = itens[0]  
                 produto = item[2]  
-                quantidade = item[3]  
+                quantidade = item[3] 
+                valor_unitario = item[4] 
                 
             
                 produtos_disponiveis = self.controller_produto.FiltrarProduto(True)
@@ -945,13 +948,14 @@ class DetalhesOrdemDialog(QDialog):
                 
         
             # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
-            dialog = AdicionarEditarItemDialog(produto, quantidade,produtos_disponiveis)
+            dialog = AdicionarEditarItemDialog(produto, quantidade,valor_unitario,produtos_disponiveis)
             if dialog.exec_(): 
                 novo_produto_id= dialog.combo_produto.currentText().split(' - ')[0]
                 novo_quantidade = dialog.quantidade.text()
+                novo_valor = dialog.valor_unitario.text()
                 
             
-                self.edit_item(novo_produto_id, novo_quantidade, id_item)
+                self.edit_item(novo_produto_id, novo_quantidade,novo_valor, id_item)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Equipamento para editar.")
    
@@ -962,31 +966,30 @@ class DetalhesOrdemDialog(QDialog):
             # Exibindo uma mensagem com o conteúdo do campo clicado
         QMessageBox.information(self, "Detalhes do Equipamento", equipamento_info)
    
+
 class AdicionarEditarItemDialog(QDialog):
-    def __init__(self, produto_id="", quantidade="", produtos_disponiveis=None):
+    def __init__(self, produto_id="", quantidade="", valor_unitario="", produtos_disponiveis=None):
         super().__init__()
-        self.setWindowTitle("Adicionar Materias utilizados")
+        self.setWindowTitle("Adicionar Materiais utilizados")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        # Subindo um nível para acessar a pasta img
         pasta_img = os.path.join(diretorio_atual, '..', 'img')
-        # Path para a imagem específica
         caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
         self.setWindowIcon(QIcon(caminho_imagem))
         self.controller = ProdutoController()
-        self.produto_id=produto_id
+        self.produto_id = produto_id
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
 
         form_layout = QFormLayout()
 
         style_sheet = """
-            QLineEdit,QComboBox {
+            QLineEdit,QComboBox ,QDoubleSpinBox{
                 border: 2px solid #3498db;
                 border-radius: 10px;
                 padding: 8px;
                 font-size: 14px;
             }
-            QLineEdit:focus , QComboBox:focus{
+            QLineEdit:focus , QComboBox:focus, QDoubleSpinBox:focus{
                 border-color: #e74c3c;
             }
         """
@@ -994,13 +997,30 @@ class AdicionarEditarItemDialog(QDialog):
         self.combo_produto = QComboBox()
         self.quantidade = QLineEdit(str(quantidade))
         
+        self.editar_valor = QRadioButton("Sim")
+        self.editar_valor.setChecked(False)  # Definindo "Não" como padrão
+        self.editar_valor_group = QButtonGroup()
+        self.editar_valor_group.addButton(self.editar_valor)
+        self.editar_valor_group.buttonClicked.connect(self.toggle_valor_editavel)
+
+        self.valor_unitario = QDoubleSpinBox()
+        self.valor_unitario.setReadOnly(True)
+        self.valor_unitario.setDecimals(2)
+        self.valor_unitario.setMaximum(9999.99) # Definindo duas casas decimais
+
+        if valor_unitario:
+            # Substitui a vírgula pelo ponto e converte para float
+            valor_float = float(valor_unitario.replace(',', '.'))
+            self.valor_unitario.setValue(valor_float)
+
         self.combo_produto.setStyleSheet(style_sheet)
         self.quantidade.setStyleSheet(style_sheet)
-      
+        self.valor_unitario.setStyleSheet(style_sheet)
 
         form_layout.addRow(QLabel("Produto:"), self.combo_produto)
         form_layout.addRow(QLabel("Quantidade:"), self.quantidade)
-        
+        form_layout.addRow(QLabel("Editar Valor Manualmente:"), self.editar_valor)
+        form_layout.addRow(QLabel("Valor unitário:"), self.valor_unitario)  # Adiciona o campo de valor unitário ao formulário
         
         layout.addLayout(form_layout)
 
@@ -1013,26 +1033,49 @@ class AdicionarEditarItemDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
         button_layout.addWidget(btn_cancelar)
-        layout.addWidget(self.combo_produto)
-
+        
         layout.addLayout(button_layout)
         self.setLayout(layout)
         
         if produtos_disponiveis:
             for produto in produtos_disponiveis:
-                self.combo_produto.addItem(f"{produto[0]} - {produto[1]}")
-            # Se o ID da marca estiver definido, encontre seu índice na lista e selecione-o
-           
+                self.combo_produto.addItem(f"{produto[0]} - {produto[1]}", produto[0])  # Adiciona o ID do produto como dado ao item do combo box
+
             if self.produto_id and produtos_disponiveis:
                 produto_ids = [produto[0] for produto in produtos_disponiveis]
                 if self.produto_id in produto_ids:
                     produto_index = produto_ids.index(self.produto_id)
                     self.combo_produto.setCurrentIndex(produto_index)
                 else:
-                    # Caso o ID da marca não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
                     self.combo_produto.setCurrentIndex(0)
         else:
             produtos_disponiveis = self.controller.FiltrarProduto(True)
+
+        # Conecta a função atualizar_valor_unitario tanto à mudança no produto quanto à mudança no campo de valor
+        self.combo_produto.currentIndexChanged.connect(self.atualizar_valor_unitario)
+        self.valor_unitario.textChanged.connect(self.atualizar_valor_manual)
+
+    def atualizar_valor_unitario(self):
+        # Obtém o ID do produto selecionado
+        produto_id = self.combo_produto.currentData()
+        # Consulta o valor do produto usando o ID
+        valor_produto = self.controller.obter_valor_produto(produto_id)
+        # Atualiza o campo de valor unitário na tela
+        self.valor_unitario.setValue(valor_produto)
+
+    def atualizar_valor_manual(self):
+    # Verifica se o campo de valor unitário não está vazio
+        if self.valor_unitario.text():
+            # Obtém o valor manualmente digitado pelo usuário
+            valor_manual = self.valor_unitario.text().replace(',', '.')  # Substitui a vírgula por um ponto
+            # Atualiza o campo de valor unitário com o valor digitado
+            self.valor_unitario.setValue(float(valor_manual))
+
+    def toggle_valor_editavel(self):
+        # Alterna entre o modo somente leitura e editável do campo de valor unitário
+        self.valor_unitario.setReadOnly(not self.valor_unitario.isReadOnly())
+
+
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
