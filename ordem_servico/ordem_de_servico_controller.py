@@ -201,17 +201,15 @@ GROUP BY
                     ordens_servico.data_final,
                     printf('%.2f', ordens_servico.mao_de_obra) AS mao_de_obra,
                     CASE 
-                        WHEN COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
-                        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
+                        WHEN COALESCE(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 0) = 0 THEN printf('%.2f', ordens_servico.mao_de_obra)
+                        ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
                     END AS valor_total,
-                    printf('%.2f', COALESCE(SUM(CAST(produto.valor AS NUMERIC(10,2)) * itens_ordem.quantidade), 0)) AS total_itens_ordem,
+                    printf('%.2f', COALESCE(SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 0)) AS total_itens_ordem,
                     ordens_servico.observacao
                 FROM 
                     ordens_servico 
                 LEFT JOIN 
                     itens_ordem ON ordens_servico.id = itens_ordem.ordem_id 
-                LEFT JOIN 
-                    produto ON itens_ordem.produto_id = produto.id 
                 WHERE 
                     ordens_servico.ativo = 1 AND ordens_servico.id = ? 
                 GROUP BY 
