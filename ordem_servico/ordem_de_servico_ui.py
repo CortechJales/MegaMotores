@@ -192,7 +192,7 @@ class OrdemDeServicoUI(QWidget):
             self.ordem_table.setRowHidden(row, not match)
 
     def filter_all(self):
-        ordens = self.controller.ListarOrdemServico()
+        ordens = self.controller.ListarTodasOrdemServico()
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
