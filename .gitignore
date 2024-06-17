@@ -170,5 +170,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 megamotores-0ce33685e841.json
-ordem_servico/temp.pdf
-ordem_servico/temp_ordem.html
+temp.pdf
+temp_ordem.html
