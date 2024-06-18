@@ -21,7 +21,7 @@ class OrdemDeServicoController:
         self.db.create_table(sql)
         
     
-    def ListarOrdemServico(self):
+    def ListarTodasOrdemServico(self):
         query = '''SELECT 
     ordens_servico.id AS id_ordem,
     cliente.nome AS nome_cliente,
