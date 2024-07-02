@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, Q
 from cliente.cliente_ui import ClienteUI
 from produto.produto_ui import ProdutoUI
 from ordem_servico.ordem_de_servico_ui import OrdemDeServicoUI
+from ordem_servico.orcamento_ui import OrcamentoUI
 from marca.marca_ui import MarcaUI
 from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
@@ -31,12 +32,14 @@ class MainWindow(QMainWindow):
         self.produto_ui = ProdutoUI(user_type)
         self.marca_ui = MarcaUI(user_type)
         self.ordem_de_servico_ui = OrdemDeServicoUI(user_type)
+        self.orcamento_ui = OrcamentoUI(user_type)
         self.cadastro_ui = CadastroUsuario()
 
         self.central_widget.addWidget(self.cliente_ui)
         self.central_widget.addWidget(self.produto_ui)
         self.central_widget.addWidget(self.marca_ui)
         self.central_widget.addWidget(self.ordem_de_servico_ui)
+        self.central_widget.addWidget(self.orcamento_ui)
         self.central_widget.addWidget(self.cadastro_ui)
 
         self.create_toolbar(user_type)
@@ -71,8 +74,13 @@ class MainWindow(QMainWindow):
         marca_action = QAction("Marca", self)
         marca_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.marca_ui))
 
+        orcamento_action = QAction("Orçamento", self)
+        orcamento_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.orcamento_ui))
+        
         ordem_de_servico_action = QAction("Ordens de Serviço", self)
         ordem_de_servico_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.ordem_de_servico_ui))
+    
+        
 
         
         if user_type == 'adm':
@@ -90,13 +98,13 @@ class MainWindow(QMainWindow):
         
         """
         if user_type == 'adm':
-            for action in [cliente_action, produto_action,marca_action, ordem_de_servico_action, usuario_action]:
+            for action in [cliente_action, produto_action,marca_action,orcamento_action,ordem_de_servico_action, usuario_action]:
                 action_button = QPushButton(action.text(), self)
                 action_button.setStyleSheet(button_style)
                 action_button.clicked.connect(action.trigger)
                 toolbar.addWidget(action_button)
         else:
-            for action in [cliente_action, produto_action, marca_action, ordem_de_servico_action]:
+            for action in [cliente_action, produto_action, marca_action,orcamento_action, ordem_de_servico_action]:
                 action_button = QPushButton(action.text(), self)
                 action_button.setStyleSheet(button_style)
                 action_button.clicked.connect(action.trigger)

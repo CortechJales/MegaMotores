@@ -15,7 +15,7 @@ import subprocess
 from datetime import datetime
 
 
-class OrdemDeServicoUI(QWidget):
+class OrcamentoUI(QWidget):
     def __init__(self,user_type):
         super().__init__()
         self.controller = OrdemDeServicoController()
@@ -476,7 +476,7 @@ class AdicionarEditarOrdemDialog(QDialog):
 
         # Configuração de QDateEdit para as datas de início e final
         self.data_inicio_edit.setCalendarPopup(True)
-        self.data_inicio_edit.setDate(QDate.fromString(data_inicio, "dd/MM/yyyy"))
+        self.data_inicio_edit.setDate(QDate.fromString(data_inicio, "dd-MM-yyyy"))
         
 
         # Estilo CSS para os campos de entrada
@@ -519,8 +519,7 @@ class AdicionarEditarOrdemDialog(QDialog):
 
         self.setLayout(layout)
         
-        if data_inicio=="":
-            self.data_inicio_edit.setDate(QDate.currentDate())
+        self.data_inicio_edit.setDate(QDate.currentDate())
 
         if clientes_disponiveis:
             self.combo_cliente.addItem("Selecione um Cliente")
@@ -1081,6 +1080,6 @@ class AdicionarEditarItemDialog(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    ui = OrdemDeServicoUI()  
+    ui = OrcamentoUI()  
     ui.show()
     sys.exit(app.exec_())
