@@ -165,6 +165,11 @@ GROUP BY
         data = (1,data_final, id)
         self.db.execute_query_no_return(query, data)
     
+    def AbrirOrdemServico(self,id):
+        query = 'UPDATE ordens_servico SET fechada=?, data_final=? WHERE id=?'
+        data = (0,None, id)
+        self.db.execute_query_no_return(query, data)
+    
     def ValidarOrdemServico(self,id):
         query = 'SELECT ativo FROM ordens_servico WHERE id=?'
         data = (id,)

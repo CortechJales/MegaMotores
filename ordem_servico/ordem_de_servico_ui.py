@@ -134,6 +134,7 @@ class OrdemDeServicoUI(QWidget):
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
             action_close = QAction("Fechar", self)
+            action_open = QAction("Reabrir", self)
             action_delete = QAction("Excluir", self)
             action_inactive = QAction("Inativar", self)
             action_ative = QAction("Reativar", self)
@@ -141,6 +142,7 @@ class OrdemDeServicoUI(QWidget):
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)  
             toolbar.addAction(action_close)
+            toolbar.addAction(action_open)
             toolbar.addAction(action_delete)
             toolbar.addAction(action_inactive)        
             toolbar.addAction(action_ative)
@@ -148,6 +150,7 @@ class OrdemDeServicoUI(QWidget):
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
             action_close.triggered.connect(self.fechar_ordem)
+            action_open.triggered.connect(self.abrir_ordem)
             action_delete.triggered.connect(self.delete_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
             action_ative.triggered.connect(self.ative_ordem)
@@ -156,16 +159,19 @@ class OrdemDeServicoUI(QWidget):
             action_add = QAction("Adicionar", self)
             action_edit = QAction("Editar", self)
             action_close = QAction("Fechar", self)
+            action_open = QAction("Reabrir", self)
             action_inactive = QAction("Inativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
             toolbar.addAction(action_close)
+            toolbar.addAction(action_open)
             toolbar.addAction(action_inactive)   
 
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
             action_close.triggered.connect(self.fechar_ordem)
+            action_open.triggered.connect(self.abrir_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
 
         self.setLayout(layout)
@@ -342,6 +348,24 @@ class OrdemDeServicoUI(QWidget):
                     QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para fechar.")
+    def abrir_ordem(self):
+        selected_row = self.ordem_table.currentRow()
+        if selected_row != -1:
+            id = self.ordem_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reabrir a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                resultado = self.controller.ValidarOrdemServicoFechada(id)
+                if resultado:
+                    estado_cliente = resultado[0][0]  # Obtém o estado do cliente da consulta
+                    if estado_cliente == 1:  
+                        self.controller.AbrirOrdemServico(id)
+                        self.filter_active()
+                    else:
+                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está aberta.")
+                else:
+                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para reabrir.")
     def show_add_ordem_dialog(self):
         clientes_disponiveis = self.controller_cliente.BuscarCliente()
         dialog = AdicionarEditarOrdemDialog(clientes_disponiveis=clientes_disponiveis)
