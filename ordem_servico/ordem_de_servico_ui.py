@@ -123,8 +123,8 @@ class OrdemDeServicoUI(QWidget):
                 color: black;
             }
         """)
-        self.ordem_table.setColumnCount(9)
-        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Observação','Ativo'])
+        self.ordem_table.setColumnCount(11)
+        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Observação','Passado','Aprovado','Ativo'])
         self.ordem_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.ordem_table)
 
@@ -233,7 +233,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8: 
+                if column_number == 10: 
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -263,7 +263,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
                 
-                if column_number == 8:
+                if column_number == 10:
                     # Configuração para coluna especial (por exemplo, checkbox)
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
@@ -291,7 +291,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -313,7 +313,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -336,7 +336,7 @@ class OrdemDeServicoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -544,8 +544,8 @@ class OrdemDeServicoUI(QWidget):
                 dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
                 
                 # Definindo o tamanho mínimo e máximo da janela
-                dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
-                dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
+                dialog.setMinimumSize(900, 700)  # Defina o tamanho mínimo desejado
+                dialog.setMaximumSize(1000, 800)  # Defina o tamanho máximo desejado
                 
                 # Executando o diálogo de detalhes de ordem
                 if dialog.exec_():

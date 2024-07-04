@@ -109,6 +109,8 @@ class OrdemDeServicoController:
                         ELSE printf('%.2f', ROUND(ordens_servico.mao_de_obra + SUM(CAST(itens_ordem.valor_unitario AS NUMERIC(10,2)) * itens_ordem.quantidade), 2))
                     END AS valor_total,
                     ordens_servico.observacao,
+                    ordens_servico.orcamento_passado,
+                    ordens_servico.orcamento_aprovado,
                     ordens_servico.ativo
                     FROM 
                         ordens_servico 

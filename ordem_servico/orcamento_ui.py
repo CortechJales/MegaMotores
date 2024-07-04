@@ -122,8 +122,8 @@ class OrcamentoUI(QWidget):
                 color: black;
             }
         """)
-        self.ordem_table.setColumnCount(9)
-        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Observação','Ativo'])
+        self.ordem_table.setColumnCount(11)
+        self.ordem_table.setHorizontalHeaderLabels(['Código', 'Cliente', 'Equipamento', 'Data Início','Data Final', 'Mão de obra','Valor Final','Observação','Passado','Aprovado','Ativo'])
         self.ordem_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.ordem_table)
 
@@ -227,7 +227,7 @@ class OrcamentoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8: 
+                if column_number == 10: 
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -257,7 +257,7 @@ class OrcamentoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
                 
-                if column_number == 8:
+                if column_number == 10:
                     # Configuração para coluna especial (por exemplo, checkbox)
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
@@ -285,7 +285,7 @@ class OrcamentoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -308,7 +308,7 @@ class OrcamentoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -331,7 +331,7 @@ class OrcamentoUI(QWidget):
             for column_number, data in enumerate(ordem):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 8:  
+                if column_number == 10:  
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -531,8 +531,8 @@ class OrcamentoUI(QWidget):
                 dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
                 
                 # Definindo o tamanho mínimo e máximo da janela
-                dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
-                dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
+                dialog.setMinimumSize(900, 700)  # Defina o tamanho mínimo desejado
+                dialog.setMaximumSize(1000, 800)  # Defina o tamanho máximo desejado
                 
                 # Executando o diálogo de detalhes de ordem
                 if dialog.exec_():
@@ -548,7 +548,7 @@ class AdicionarEditarOrdemDialog(QDialog):
     def __init__(self, cliente_id="",observacao="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
         super().__init__()
        
-        self.setWindowTitle("Adicionar Ordem de serviço")
+        self.setWindowTitle("Adicionar Orçamento")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
         # Subindo um nível para acessar a pasta img
         pasta_img = os.path.join(diretorio_atual, '..', 'img')
