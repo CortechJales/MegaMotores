@@ -1,16 +1,14 @@
-from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, QWidget, QSpacerItem, QPushButton, QSizePolicy, QMessageBox, QMenu, QApplication, QLabel
+from PyQt5.QtWidgets import QMainWindow, QAction, QStackedWidget, QHBoxLayout, QWidget, QSpacerItem, QPushButton, QSizePolicy, QLabel, QApplication
+from PyQt5.QtGui import QIcon, QFont, QPixmap
 from cliente.cliente_ui import ClienteUI
 from produto.produto_ui import ProdutoUI
+from marca.marca_ui import MarcaUI
 from ordem_servico.ordem_de_servico_ui import OrdemDeServicoUI
 from ordem_servico.orcamento_ui import OrcamentoUI
-from marca.marca_ui import MarcaUI
 from database.cadastro_usuário import CadastroUsuario
 from login.login_window import LoginWindow
-from PyQt5.QtGui import QIcon, QFont,QPixmap
 import sys
 import os
-
-
 
 class MainWindow(QMainWindow):
     def __init__(self, user_type=None):
@@ -19,9 +17,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sistema de Gerenciamento")
         self.setGeometry(100, 100, 900, 600)
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        # Subindo um nível para acessar a pasta img
         pasta_imagens = os.path.join(diretorio_atual, 'img')
-        # Path para a imagem específica
         caminho_imagem = os.path.join(pasta_imagens, 'megamotores.png')
         self.setWindowIcon(QIcon(caminho_imagem))
 
@@ -54,39 +50,40 @@ class MainWindow(QMainWindow):
     def create_toolbar(self, user_type):
         toolbar = self.addToolBar("Toolbar")
 
+        # Adicionando logo à toolbar
         logo_label = QLabel(self)
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        # Subindo um nível para acessar a pasta img
         pasta_imagens = os.path.join(diretorio_atual, 'img')
-        # Path para a imagem específica
         caminho_imagem = os.path.join(pasta_imagens, 'mega.png')
         pixmap = QPixmap(caminho_imagem)
         scaled_pixmap = pixmap.scaled(340, 60)  # Ajustar o tamanho conforme necessário
         logo_label.setPixmap(scaled_pixmap)
         toolbar.addWidget(logo_label)
 
+        # Definindo ação para cada botão da toolbar
         cliente_action = QAction("Clientes", self)
-        cliente_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cliente_ui))
+        cliente_action.triggered.connect(lambda: self.change_page(self.cliente_ui))
 
         produto_action = QAction("Produtos", self)
-        produto_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.produto_ui))
+        produto_action.triggered.connect(lambda: self.change_page(self.produto_ui))
 
         marca_action = QAction("Marca", self)
-        marca_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.marca_ui))
+        marca_action.triggered.connect(lambda: self.change_page(self.marca_ui))
 
         orcamento_action = QAction("Orçamento", self)
-        orcamento_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.orcamento_ui))
+        orcamento_action.triggered.connect(lambda: self.change_page(self.orcamento_ui))
         
         ordem_de_servico_action = QAction("Ordens de Serviço", self)
-        ordem_de_servico_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.ordem_de_servico_ui))
-    
-        
+        ordem_de_servico_action.triggered.connect(lambda: self.change_page(self.ordem_de_servico_ui))
 
-        
         if user_type == 'adm':
             usuario_action = QAction("Usuários", self)
-            usuario_action.triggered.connect(lambda: self.central_widget.setCurrentWidget(self.cadastro_ui))
-        # Estilo para os botões da barra de ferramentas
+            usuario_action.triggered.connect(lambda: self.change_page(self.cadastro_ui))
+
+        actions = [cliente_action, produto_action, marca_action, orcamento_action, ordem_de_servico_action]
+        if user_type == 'adm':
+            actions.append(usuario_action)
+
         button_style = """
             background-color: #3498db;
             color: white;
@@ -95,20 +92,14 @@ class MainWindow(QMainWindow):
             padding: 10px 10px;
             margin-left: 10px;
             margin-top: 5px;
-        
         """
-        if user_type == 'adm':
-            for action in [cliente_action, produto_action,marca_action,orcamento_action,ordem_de_servico_action, usuario_action]:
-                action_button = QPushButton(action.text(), self)
-                action_button.setStyleSheet(button_style)
-                action_button.clicked.connect(action.trigger)
-                toolbar.addWidget(action_button)
-        else:
-            for action in [cliente_action, produto_action, marca_action,orcamento_action, ordem_de_servico_action]:
-                action_button = QPushButton(action.text(), self)
-                action_button.setStyleSheet(button_style)
-                action_button.clicked.connect(action.trigger)
-                toolbar.addWidget(action_button)
+
+        for action in actions:
+            action_button = QPushButton(action.text(), self)
+            action_button.setStyleSheet(button_style)
+            action_button.clicked.connect(action.trigger)
+            toolbar.addWidget(action_button)
+
         # Adicionar botão de deslogar à direita
         layout = QHBoxLayout()
         spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -116,7 +107,7 @@ class MainWindow(QMainWindow):
 
         btn_logout = QPushButton("Deslogar")
         btn_logout.setMinimumWidth(100)
-        btn_logout.clicked.connect(self.show_login_dialog)  # Modificado aqui
+        btn_logout.clicked.connect(self.show_login_dialog)
         btn_logout.setStyleSheet("""
             background-color: #FF5733;
             color: white;
@@ -134,20 +125,11 @@ class MainWindow(QMainWindow):
 
         toolbar.addWidget(widget)
 
-
-    def show_logout_menu(self):
-        menu = QMenu()
-
-        login_action = QAction("Voltar para o login", self)
-        login_action.triggered.connect(self.show_login_dialog)
-
-        close_action = QAction("Fechar", self)
-        close_action.triggered.connect(self.close_application)
-
-        menu.addAction(login_action)
-        menu.addAction(close_action)
-
-        menu.exec_(self.sender().mapToGlobal(self.sender().rect().bottomRight()))
+    def change_page(self, page):
+        # Altera para a página especificada e chama filter_active() se for uma UI válida
+        self.central_widget.setCurrentWidget(page)
+        if hasattr(page, 'filter_active') and callable(getattr(page, 'filter_active')):
+            page.filter_active()
 
     def show_login_dialog(self):
         self.hide()

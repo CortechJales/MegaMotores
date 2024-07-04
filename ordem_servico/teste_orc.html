@@ -131,6 +131,11 @@
             text-align: center;
             border: 2px solid black; /* Adicionando a borda preta */
         }
+        .tipo_ordem{
+            margin-top: -50px;
+            text-align: center;
+            margin-bottom: 50px;
+        }
     </style>
 </head>
 <body>
@@ -154,7 +159,8 @@
                 <tr>
                     <td><h2 style="margin-top: -20px;"> <p><b>FONE: <span>(17) 3442-6243 - 99754-4466</span></b></p></h2>
                     <p style="font-size: 16pt;margin-top: -20px;"><span>AV AMADEU BIZELLI, 1516 - CENTRO</span></p><p style="font-size: x-large; margin-top: -20px;">CEP: <span>15600-000- Fernandópolis-SP</span>  </p></td>
-                    <td><div class="retangulo">
+                    <td>
+                        <div class="retangulo">
                         <p style="margin-top: -20px;"><h3>DATA</h3></p>
                         <p style="margin-top: -10px;"><h2>{{ordem_info.Data_inicial}}</h2></p>
                     </div></td>   
@@ -164,6 +170,9 @@
                 
             </tbody>
         </table>
+    </div>
+    <div class="tipo_ordem">
+        <p><strong><H1>ORÇAMENTO</H1></strong> </p>
     </div>
     <fieldset id="cliente-info" style="margin-top: -40px;">
         <legend>Informações do Cliente</legend>

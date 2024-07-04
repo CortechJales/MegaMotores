@@ -6,3 +6,8 @@ ADD COLUMN orcamento_passado DATA;
 
 ALTER TABLE ordens_servico
 ADD COLUMN orcamento_aprovado DATA;
+
+
+UPDATE ordens_servico
+SET orcamento = 0
+WHERE orcamento IS NULL OR orcamento <> 1;

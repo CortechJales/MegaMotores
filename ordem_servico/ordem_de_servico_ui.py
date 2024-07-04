@@ -69,6 +69,16 @@ class OrdemDeServicoUI(QWidget):
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_inactive)
             filter_layout.addWidget(self.btn_inactive)
+            
+            self.btn_active = QPushButton("Abertos")
+            self.btn_active.setStyleSheet(filter_button_style)
+            self.btn_active.clicked.connect(self.filter_aberto)
+            filter_layout.addWidget(self.btn_active)
+
+            self.btn_inactive = QPushButton("Fechados")
+            self.btn_inactive.setStyleSheet(filter_button_style)
+            self.btn_inactive.clicked.connect(self.filter_fechado)
+            filter_layout.addWidget(self.btn_inactive)
         
         if self.user_type == 'usr':
          
@@ -76,6 +86,16 @@ class OrdemDeServicoUI(QWidget):
             self.btn_active.setStyleSheet(filter_button_style)
             self.btn_active.clicked.connect(self.filter_active)
             filter_layout.addWidget(self.btn_active)
+            
+            self.btn_active = QPushButton("Abertos")
+            self.btn_active.setStyleSheet(filter_button_style)
+            self.btn_active.clicked.connect(self.filter_aberto)
+            filter_layout.addWidget(self.btn_active)
+
+            self.btn_inactive = QPushButton("Fechados")
+            self.btn_inactive.setStyleSheet(filter_button_style)
+            self.btn_inactive.clicked.connect(self.filter_fechado)
+            filter_layout.addWidget(self.btn_inactive)
         layout.addLayout(filter_layout)
 
         self.ordem_table = QTableWidget()
@@ -136,6 +156,7 @@ class OrdemDeServicoUI(QWidget):
             action_close = QAction("Fechar", self)
             action_open = QAction("Reabrir", self)
             action_delete = QAction("Excluir", self)
+            action_orcamento = QAction("Orçamento", self)
             action_inactive = QAction("Inativar", self)
             action_ative = QAction("Reativar", self)
 
@@ -144,6 +165,7 @@ class OrdemDeServicoUI(QWidget):
             toolbar.addAction(action_close)
             toolbar.addAction(action_open)
             toolbar.addAction(action_delete)
+            toolbar.addAction(action_orcamento)
             toolbar.addAction(action_inactive)        
             toolbar.addAction(action_ative)
 
@@ -152,6 +174,7 @@ class OrdemDeServicoUI(QWidget):
             action_close.triggered.connect(self.fechar_ordem)
             action_open.triggered.connect(self.abrir_ordem)
             action_delete.triggered.connect(self.delete_ordem)
+            action_orcamento.triggered.connect(self.orcamento_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
             action_ative.triggered.connect(self.ative_ordem)
         if self.user_type == 'usr':
@@ -160,18 +183,21 @@ class OrdemDeServicoUI(QWidget):
             action_edit = QAction("Editar", self)
             action_close = QAction("Fechar", self)
             action_open = QAction("Reabrir", self)
+            action_orcamento = QAction("Orçamento", self)
             action_inactive = QAction("Inativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
             toolbar.addAction(action_close)
             toolbar.addAction(action_open)
+            toolbar.addAction(action_orcamento)
             toolbar.addAction(action_inactive)   
 
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
             action_close.triggered.connect(self.fechar_ordem)
             action_open.triggered.connect(self.abrir_ordem)
+            action_orcamento.triggered.connect(self.orcamento_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
 
         self.setLayout(layout)
@@ -198,7 +224,7 @@ class OrdemDeServicoUI(QWidget):
             self.ordem_table.setRowHidden(row, not match)
 
     def filter_all(self):
-        ordens = self.controller.ListarTodasOrdemServico()
+        ordens = self.controller.ListarTodasOrdemServico(False,False)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -221,7 +247,64 @@ class OrdemDeServicoUI(QWidget):
                     self.ordem_table.setItem(row_number, column_number, item)
 
     def filter_active(self):
-        ordens = self.controller.FiltrarOrdemServico(True)
+        # Captura a posição atual da barra de rolagem
+        current_scroll_position = self.ordem_table.verticalScrollBar().value()
+
+        # Simula a obtenção dos dados filtrados
+        ordens = self.controller.FiltrarOrdemServico(True, False, False)
+        
+        # Limpa a tabela
+        self.ordem_table.setRowCount(0)
+
+        # Preenche a tabela com os novos dados
+        for row_number, ordem in enumerate(ordens):
+            self.ordem_table.insertRow(row_number)
+            
+            for column_number, data in enumerate(ordem):
+                item = QTableWidgetItem(str(data))
+                
+                if column_number == 8:
+                    # Configuração para coluna especial (por exemplo, checkbox)
+                    checkbox = QCheckBox()
+                    checkbox.setChecked(bool(data))
+                    checkbox.setEnabled(False)
+                    cell_widget = QWidget()
+                    layout = QHBoxLayout(cell_widget)
+                    layout.addWidget(checkbox)
+                    layout.setAlignment(Qt.AlignCenter)
+                    layout.setContentsMargins(0, 0, 0, 0)
+                    self.ordem_table.setCellWidget(row_number, column_number, cell_widget)
+                else:
+                    # Configuração para outras colunas
+                    self.ordem_table.setItem(row_number, column_number, item)
+        
+        # Restaura a posição da barra de rolagem
+        self.ordem_table.verticalScrollBar().setValue(current_scroll_position)
+
+    def filter_inactive(self):
+        ordens = self.controller.FiltrarOrdemServico(False,False,False)
+        self.ordem_table.setRowCount(0)
+    
+        for row_number, ordem in enumerate(ordens):
+            self.ordem_table.insertRow(row_number)
+        
+            for column_number, data in enumerate(ordem):
+                item = QTableWidgetItem(str(data))
+            
+                if column_number == 8:  
+                    checkbox = QCheckBox()
+                    checkbox.setChecked(bool(data))
+                    checkbox.setEnabled(False)
+                    cell_widget = QWidget()
+                    layout = QHBoxLayout(cell_widget)
+                    layout.addWidget(checkbox)
+                    layout.setAlignment(Qt.AlignCenter)
+                    layout.setContentsMargins(0, 0, 0, 0)
+                    self.ordem_table.setCellWidget(row_number, column_number, cell_widget)
+                else:
+                    self.ordem_table.setItem(row_number, column_number, item)
+    def filter_aberto(self):
+        ordens = self.controller.FiltrarOrdemServico(True,False,False)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -243,8 +326,8 @@ class OrdemDeServicoUI(QWidget):
                 else:
                     self.ordem_table.setItem(row_number, column_number, item)
 
-    def filter_inactive(self):
-        ordens = self.controller.FiltrarOrdemServico(False)
+    def filter_fechado(self):
+        ordens = self.controller.FiltrarOrdemServico(True,False,True)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -269,7 +352,7 @@ class OrdemDeServicoUI(QWidget):
     def add_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra ):
         valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
         valor_arredondado = round(valor_numerico, 2)
-        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado, observacao)
+        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado, observacao,0)
         self.filter_active() 
                         
     def edit_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra,id):
@@ -348,6 +431,16 @@ class OrdemDeServicoUI(QWidget):
                     QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para fechar.")
+    def orcamento_ordem(self):
+        selected_row = self.ordem_table.currentRow()
+        if selected_row != -1:
+            id = self.ordem_table.item(selected_row, 0).text()
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja tornar a ordem de serviço código {id} um orçamento?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:         
+                        self.controller.OrcamentoOrdemServico(id)
+                        self.filter_active()   
+        else:
+            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para tornar um orçamento.")
     def abrir_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
@@ -417,12 +510,11 @@ class OrdemDeServicoUI(QWidget):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id_ordem = int(self.ordem_table.item(selected_row, 0).text())
-        
-        # Método para buscar os dados da ordem pelo ID
+            
+            # Método para buscar os dados da ordem pelo ID
             ordens = self.controller.ListarOrdemServico(id_ordem)
-        
+            
             if ordens:
-                
                 ordem = ordens[0] 
                 cliente = ordem[1]  
                 equipamento = ordem[2]  
@@ -431,34 +523,44 @@ class OrdemDeServicoUI(QWidget):
                 mao_de_obra = ordem[5]
                 valor_total = ordem[6]
                 observacao = ordem[7]
+                orcamento_passado = ordem[8]
+                orcamento_aprovado = ordem[9]
 
                 cliente_info = {
-                'Código': id_ordem,
-                'Cliente': cliente,
-                'Equipamento': equipamento,
-                'Data de início': data_inicio,
-                'Data Final': data_final,
-                'Mão de obra': mao_de_obra,
-                'Valor Total': valor_total,
-                'Observação': observacao
-            }
-            itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
+                    'Código': id_ordem,
+                    'Cliente': cliente,
+                    'Equipamento': equipamento,
+                    'Data de início': data_inicio,
+                    'Data Final': data_final,
+                    'Mão de obra': mao_de_obra,
+                    'Valor Total': valor_total,
+                    'Observação': observacao,
+                    'Orçamento Passado': orcamento_passado,
+                    'Orçamento Aprovado': orcamento_aprovado
+                }
+                
+                itens_ordem = self.controller_item.ListarItemOrdem(id_ordem)
+                
+                dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
+                
+                # Definindo o tamanho mínimo e máximo da janela
+                dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
+                dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
+                
+                # Executando o diálogo de detalhes de ordem
+                if dialog.exec_():
+                    # Esta parte do código será executada após o diálogo ser fechado
 
-            dialog = DetalhesOrdemDialog(cliente_info, itens_ordem, self.user_type)
-        
-        # Definindo o tamanho mínimo e máximo da janela
-            dialog.setMinimumSize(700, 500)  # Defina o tamanho mínimo desejado
-            dialog.setMaximumSize(900, 700)  # Defina o tamanho máximo desejado
-
-            dialog.exec_()
-
-        else:
-            QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
+                    print("Diálogo fechado com sucesso")
+                    self.filter_active()  # Chama a função filter_ativado da classe principal
+            else:
+                QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
     
 
 
 
 class AdicionarEditarOrdemDialog(QDialog):
+    print("Diálogo fechado com sucesso")
     def __init__(self, cliente_id="",observacao="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
         super().__init__()
        
@@ -748,9 +850,56 @@ class DetalhesOrdemDialog(QDialog):
         action_print.triggered.connect(self.print_order)
         self.setLayout(layout)
 
-    
+    def closeEvent(self, event):
+        # Sobrescrever closeEvent para emitir o sinal aceito ao fechar a janela
+        self.accept()
     # Métodos para manipulação de equipamentos...
+    def atualizar_campos_cliente(self):
+        id_ordem = self.ordem_info['Código']
+        self.clearCamposCliente
+        ordens = self.controller_ordem.ListarOrdemServico(id_ordem)
+        
+        if ordens:
+            ordem = ordens[0] 
+            cliente = ordem[1]  
+            equipamento = ordem[2]  
+            data_inicio = ordem[3]  
+            data_final = ordem[4]
+            mao_de_obra = ordem[5]
+            valor_total = ordem[6]
+            observacao = ordem[7]
+            orcamento_passado = ordem[8]
+            orcamento_aprovado = ordem[9]
 
+            cliente_info = {
+                'Código': id_ordem,
+                'Cliente': cliente,
+                'Equipamento': equipamento,
+                'Data de início': data_inicio,
+                'Data Final': data_final,
+                'Mão de obra': mao_de_obra,
+                'Valor Total': valor_total,
+                'Observação': observacao,
+                'Orçamento Passado': orcamento_passado,
+                'Orçamento Aprovado': orcamento_aprovado
+            }
+
+            for key, value in cliente_info.items():
+                if key in self.campos_cliente:
+                    self.campos_cliente[key].setText(str(value))
+            
+            # Forçar atualização da interface gráfica
+            self.update()  # ou self.repaint()
+
+            # Exemplo de print para debug
+            # print("Campos do cliente atualizados:", cliente_info)
+        else:
+            print(f"Nenhuma ordem de serviço encontrada para o código {id_ordem}")
+    def clearCamposCliente(self):
+        # Limpa os widgets existentes
+        for field in self.campos_cliente.values():
+            field.deleteLater()
+        self.campos_cliente.clear()
     def print_order(self):
         # Função para renderizar e imprimir o HTML como PDF
         
@@ -768,6 +917,8 @@ class DetalhesOrdemDialog(QDialog):
             valor_total = ord[6]
             total_material = ord[7]
             observacao = ord[8]
+            orcamento_passado = ord[9]
+            orcamento_aprovado = ord[10]
 
             ordem_info = {
                     'Data_inicial': data_inicio,
@@ -775,9 +926,12 @@ class DetalhesOrdemDialog(QDialog):
                     'mao_de_obra': mao_de_obra,
                     'Total_ordem': valor_total,
                     'Total_material': total_material,
-                    'Observacao': observacao
+                    'Observacao': observacao,
+                    'Orcamento_Passado': orcamento_passado,
+                    'Orcamento_Aprovado': orcamento_aprovado
                     
                 }
+            
             
             print(f"cliente_id: {cliente_id}")
             clientes = self.controller_cliente.CarregarCliente(cliente_id)
@@ -917,7 +1071,7 @@ class DetalhesOrdemDialog(QDialog):
 
         # Define o número de linhas da tabela para corresponder ao número de equipamentos
         self.item_table.setRowCount(len(self.itens))
-
+        self.atualizar_campos_cliente()
         # Adiciona os equipamentos atualizados à tabela
         for row, equip in enumerate(self.itens):
             id_item = QTableWidgetItem(str(equip['id_item'])) 
