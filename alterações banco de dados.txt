@@ -1,10 +1,13 @@
-ALTER TABLE equipamento_cliente
-ADD COLUMN potencia TEXT;
+ALTER TABLE ordens_servico
+ADD COLUMN orcamento BOOLEAN;
 
-ALTER TABLE itens_ordem
-ADD COLUMN valor_unitario REAL;
+ALTER TABLE ordens_servico
+ADD COLUMN orcamento_passado DATA;
 
-UPDATE itens_ordem
-SET valor_unitario = (
-    SELECT valor FROM produto WHERE produto.id = itens_ordem.produto_id
-);
+ALTER TABLE ordens_servico
+ADD COLUMN orcamento_aprovado DATA;
+
+
+UPDATE ordens_servico
+SET orcamento = 0
+WHERE orcamento IS NULL OR orcamento <> 1;

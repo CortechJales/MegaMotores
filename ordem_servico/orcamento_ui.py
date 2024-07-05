@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QRadioButton, QButtonGroup,QMessageBox, QCheckBox,QDateEdit, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
+from PyQt5.QtWidgets import QWidget,QDoubleSpinBox, QDialog,QFormLayout, QRadioButton, QButtonGroup,QMessageBox, QDialogButtonBox,QCheckBox,QDateEdit, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QComboBox,QTableWidgetItem, QHeaderView, QAction, QToolBar, QApplication
 from PyQt5.QtCore import Qt,QDate,QRectF
 from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from cliente.equipamento_cliente_controller import EquipamentoClienteController
@@ -15,7 +15,7 @@ import subprocess
 from datetime import datetime
 
 
-class OrdemDeServicoUI(QWidget):
+class OrcamentoUI(QWidget):
     def __init__(self,user_type):
         super().__init__()
         self.controller = OrdemDeServicoController()
@@ -28,7 +28,6 @@ class OrdemDeServicoUI(QWidget):
         
         self.user_type= user_type
         self.initUI()
-        
         print(f"tipo que chegou na ordem: {user_type}")
 
     def initUI(self):
@@ -75,7 +74,7 @@ class OrdemDeServicoUI(QWidget):
             self.btn_active.clicked.connect(self.filter_aberto)
             filter_layout.addWidget(self.btn_active)
 
-            self.btn_inactive = QPushButton("Fechados")
+            self.btn_inactive = QPushButton("Rejeitados")
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_fechado)
             filter_layout.addWidget(self.btn_inactive)
@@ -86,13 +85,13 @@ class OrdemDeServicoUI(QWidget):
             self.btn_active.setStyleSheet(filter_button_style)
             self.btn_active.clicked.connect(self.filter_active)
             filter_layout.addWidget(self.btn_active)
-            
+
             self.btn_active = QPushButton("Abertos")
             self.btn_active.setStyleSheet(filter_button_style)
             self.btn_active.clicked.connect(self.filter_aberto)
             filter_layout.addWidget(self.btn_active)
 
-            self.btn_inactive = QPushButton("Fechados")
+            self.btn_inactive = QPushButton("Rejeitados")
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_fechado)
             filter_layout.addWidget(self.btn_inactive)
@@ -149,6 +148,7 @@ class OrdemDeServicoUI(QWidget):
         """)
         layout.addWidget(toolbar)
         
+          
         if self.user_type == 'adm':
 
             action_add = QAction("Adicionar", self)
@@ -156,7 +156,6 @@ class OrdemDeServicoUI(QWidget):
             action_close = QAction("Fechar", self)
             action_open = QAction("Reabrir", self)
             action_delete = QAction("Excluir", self)
-            action_orcamento = QAction("Orçamento", self)
             action_inactive = QAction("Inativar", self)
             action_ative = QAction("Reativar", self)
 
@@ -165,7 +164,6 @@ class OrdemDeServicoUI(QWidget):
             toolbar.addAction(action_close)
             toolbar.addAction(action_open)
             toolbar.addAction(action_delete)
-            toolbar.addAction(action_orcamento)
             toolbar.addAction(action_inactive)        
             toolbar.addAction(action_ative)
 
@@ -174,7 +172,6 @@ class OrdemDeServicoUI(QWidget):
             action_close.triggered.connect(self.fechar_ordem)
             action_open.triggered.connect(self.abrir_ordem)
             action_delete.triggered.connect(self.delete_ordem)
-            action_orcamento.triggered.connect(self.orcamento_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
             action_ative.triggered.connect(self.ative_ordem)
         if self.user_type == 'usr':
@@ -183,21 +180,18 @@ class OrdemDeServicoUI(QWidget):
             action_edit = QAction("Editar", self)
             action_close = QAction("Fechar", self)
             action_open = QAction("Reabrir", self)
-            action_orcamento = QAction("Orçamento", self)
             action_inactive = QAction("Inativar", self)
 
             toolbar.addAction(action_add)
             toolbar.addAction(action_edit)
             toolbar.addAction(action_close)
             toolbar.addAction(action_open)
-            toolbar.addAction(action_orcamento)
             toolbar.addAction(action_inactive)   
 
             action_add.triggered.connect(self.show_add_ordem_dialog)
             action_edit.triggered.connect(self.show_edit_ordem_dialog)
             action_close.triggered.connect(self.fechar_ordem)
             action_open.triggered.connect(self.abrir_ordem)
-            action_orcamento.triggered.connect(self.orcamento_ordem)
             action_inactive.triggered.connect(self.inactive_ordem)
 
         self.setLayout(layout)
@@ -224,7 +218,7 @@ class OrdemDeServicoUI(QWidget):
             self.ordem_table.setRowHidden(row, not match)
 
     def filter_all(self):
-        ordens = self.controller.ListarTodasOrdemServico(False,False)
+        ordens = self.controller.ListarTodasOrdemServico(True,True)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -251,7 +245,7 @@ class OrdemDeServicoUI(QWidget):
         current_scroll_position = self.ordem_table.verticalScrollBar().value()
 
         # Simula a obtenção dos dados filtrados
-        ordens = self.controller.FiltrarOrdemServico(True, False, False)
+        ordens = self.controller.FiltrarOrdemServico(True, True, False)
         
         # Limpa a tabela
         self.ordem_table.setRowCount(0)
@@ -282,7 +276,7 @@ class OrdemDeServicoUI(QWidget):
         self.ordem_table.verticalScrollBar().setValue(current_scroll_position)
 
     def filter_inactive(self):
-        ordens = self.controller.FiltrarOrdemServico(False,False,False)
+        ordens = self.controller.FiltrarOrdemServico(False,True,False)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -303,8 +297,9 @@ class OrdemDeServicoUI(QWidget):
                     self.ordem_table.setCellWidget(row_number, column_number, cell_widget)
                 else:
                     self.ordem_table.setItem(row_number, column_number, item)
+
     def filter_aberto(self):
-        ordens = self.controller.FiltrarOrdemServico(True,False,False)
+        ordens = self.controller.FiltrarOrdemServico(True, True,False)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -327,7 +322,7 @@ class OrdemDeServicoUI(QWidget):
                     self.ordem_table.setItem(row_number, column_number, item)
 
     def filter_fechado(self):
-        ordens = self.controller.FiltrarOrdemServico(True,False,True)
+        ordens = self.controller.FiltrarOrdemServico(True,True,True)
         self.ordem_table.setRowCount(0)
     
         for row_number, ordem in enumerate(ordens):
@@ -352,7 +347,7 @@ class OrdemDeServicoUI(QWidget):
     def add_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra ):
         valor_numerico = float(mao_de_obra.replace('R$', '').replace(',', '.'))
         valor_arredondado = round(valor_numerico, 2)
-        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado, observacao,0)
+        self.controller.CadastrarOrdemServico( cliente, equipamento, data_inicio, valor_arredondado, observacao, 1)
         self.filter_active() 
                         
     def edit_ordem(self, cliente,observacao, equipamento, data_inicio, mao_de_obra,id):
@@ -367,18 +362,18 @@ class OrdemDeServicoUI(QWidget):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir a ordem de serviço ID {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o Orçamento ID {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 self.controller.DeletarOrdemServico(id)
                 self.filter_active()
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma ordem de serviço para excluir.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para excluir.")
 
     def inactive_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o Orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServico(id)
                 if resultado:
@@ -387,17 +382,17 @@ class OrdemDeServicoUI(QWidget):
                         self.controller.InativarOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está inativa.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento  já está inativo.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para inativar.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para inativar.")
  
     def ative_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar o Orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServico(id)
                 if resultado:
@@ -406,17 +401,17 @@ class OrdemDeServicoUI(QWidget):
                         self.controller.AtivarOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está Ativa.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está Ativo.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço de serviço para Ativar.")   
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento  para Ativar.")   
     
     def fechar_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja fechar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja fechar o orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServicoFechada(id)
                 if resultado:
@@ -426,26 +421,17 @@ class OrdemDeServicoUI(QWidget):
                         self.controller.FecharOrdemServico(data_final,id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está fechada.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está fechado.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para fechar.")
-    def orcamento_ordem(self):
-        selected_row = self.ordem_table.currentRow()
-        if selected_row != -1:
-            id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja tornar a ordem de serviço código {id} um orçamento?", QMessageBox.Yes | QMessageBox.No)
-            if resposta == QMessageBox.Yes:         
-                        self.controller.OrcamentoOrdemServico(id)
-                        self.filter_active()   
-        else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para tornar um orçamento.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para fechar.")
+
     def abrir_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reabrir a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reabrir  o Orçamento {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServicoFechada(id)
                 if resultado:
@@ -454,11 +440,12 @@ class OrdemDeServicoUI(QWidget):
                         self.controller.AbrirOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está aberta.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está aberta.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrada.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para reabrir.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para reabrir.")
+
     def show_add_ordem_dialog(self):
         clientes_disponiveis = self.controller_cliente.BuscarCliente()
         dialog = AdicionarEditarOrdemDialog(clientes_disponiveis=clientes_disponiveis)
@@ -550,21 +537,18 @@ class OrdemDeServicoUI(QWidget):
                 # Executando o diálogo de detalhes de ordem
                 if dialog.exec_():
                     # Esta parte do código será executada após o diálogo ser fechado
-
-                    print("Diálogo fechado com sucesso")
-                    self.filter_active()  # Chama a função filter_ativado da classe principal
+                     print("Diálogo fechado com sucesso")
+                     self.filter_active()  # Chama a função filter_ativado da classe principal
             else:
                 QMessageBox.warning(self, "Aviso", "Selecione um cliente para ver os detalhes.")
     
 
 
-
 class AdicionarEditarOrdemDialog(QDialog):
-    print("Diálogo fechado com sucesso")
     def __init__(self, cliente_id="",observacao="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
         super().__init__()
        
-        self.setWindowTitle("Adicionar Ordem de serviço")
+        self.setWindowTitle("Adicionar Orçamento")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
         # Subindo um nível para acessar a pasta img
         pasta_img = os.path.join(diretorio_atual, '..', 'img')
@@ -723,7 +707,6 @@ class AdicionarEditarOrdemDialog(QDialog):
 class DetalhesOrdemDialog(QDialog):
     def __init__(self, ordem_info, itens_ordem, user_type):
         super().__init__()
-
         self.ordem_info = ordem_info
         self.itens_ordem = itens_ordem
         self.user_type = user_type
@@ -738,7 +721,7 @@ class DetalhesOrdemDialog(QDialog):
         
         self.controller_ordem = OrdemDeServicoController()
 
-        self.setWindowTitle("Detalhes da Ordem de serviço")
+        self.setWindowTitle("Detalhes do Orçamento")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
         # Subindo um nível para acessar a pasta img
         pasta_img = os.path.join(diretorio_atual, '..', 'img')
@@ -832,15 +815,27 @@ class DetalhesOrdemDialog(QDialog):
                         action_add = QAction("Adicionar", self)
                         action_edit = QAction("Editar", self)
                         action_delete = QAction("Excluir", self)
+                        action_passado = QAction("Passar Orçamento", self)
+                        action_aprovado = QAction("Aprovar", self)
+                        action_negado = QAction("Rejeitar", self)
+                        action_clean = QAction("Limpar Datas", self)
 
                         toolbar.addAction(action_add)
                         toolbar.addAction(action_edit)
                         toolbar.addAction(action_delete)
+                        toolbar.addAction(action_passado)
+                        toolbar.addAction(action_aprovado)
+                        toolbar.addAction(action_negado)
+                        toolbar.addAction(action_clean)
 
             # Configurar conexões de sinais e slots para os botões
                         action_add.triggered.connect(self.show_add_item_dialog)
                         action_edit.triggered.connect(self.show_edit_item_dialog)
                         action_delete.triggered.connect(self.delete_item)
+                        action_passado.triggered.connect(self.passar_ordem)
+                        action_aprovado.triggered.connect(self.aprovar_ordem)
+                        action_negado.triggered.connect(self.negar_ordem)
+                        action_clean.triggered.connect(self.limpar_ordem)
 
         
         action_print = QAction("Imprimir", self)      
@@ -932,7 +927,6 @@ class DetalhesOrdemDialog(QDialog):
                     
                 }
             
-            
             print(f"cliente_id: {cliente_id}")
             clientes = self.controller_cliente.CarregarCliente(cliente_id)
 
@@ -993,7 +987,7 @@ class DetalhesOrdemDialog(QDialog):
                     pdf_path = os.path.join(diretorio_atual,'temp.pdf')
 
                     # Renderiza o template HTML com os dados fornecidos
-                    template_path = os.path.join(diretorio_atual,'teste.html')
+                    template_path = os.path.join(diretorio_atual,'teste_orc.html')
 
                     # Verifica se os arquivos existem nos caminhos especificados
                     if not os.path.exists(template_path):
@@ -1064,13 +1058,174 @@ class DetalhesOrdemDialog(QDialog):
                 self.update_item_table()  # Atualiza a tabela
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um item para excluir.")
-   
+    
+    def limpar_ordem(self):      
+            ordem_id = self.ordem_info['Código']
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir as datas do orçamento Código {ordem_id}?", QMessageBox.Yes | QMessageBox.No)
+            if resposta == QMessageBox.Yes:
+                self.controller_ordem.LimparCamposOrcamento(ordem_id)                
+                QMessageBox.information(self, "Sucesso", f"Datas do Orçamento {ordem_id} limpas com sucesso!")                 
+                self.atualizar_campos_cliente()
+                
+    
+    def passar_ordem(self):
+        # Criar um diálogo para selecionar a data
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Selecionar Data de passar o orçamento ao cliente")
+        layout = QVBoxLayout()
+
+        # Adicionar um QDateEdit para escolher a data
+        
+        date_edit = QDateEdit()
+        date_edit.setDate(QDate.currentDate())  # Definir a data atual como a data inicial
+        date_edit.setCalendarPopup(True)
+        layout.addWidget(date_edit)
+
+
+        # Adicionar botões de OK e Cancelar
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, parent=dialog)
+        layout.addWidget(buttons)
+
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        dialog.setLayout(layout)
+
+        # Exibir o diálogo e obter a data selecionada
+        if dialog.exec_() == QDialog.Accepted:
+            data_aprovacao = date_edit.date().toString("dd/MM/yyyy")
+
+            # Continuar com o processo de aprovação apenas se o usuário selecionou uma data
+            if data_aprovacao:
+                ordem_id = self.ordem_info['Código']
+                resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja passar o orçamento código {ordem_id}?", QMessageBox.Yes | QMessageBox.No)
+                if resposta == QMessageBox.Yes:
+                    try:
+                        # Aqui você deve salvar data_aprovacao no banco junto com o status de aprovação
+                        # Exemplo de como você poderia fazer isso:
+                        resultado = self.controller_ordem.PassarOrcamento(data_aprovacao, ordem_id)
+                        if resultado:
+                            QMessageBox.information(self, "Sucesso", f"Orçamento {ordem_id} passado com sucesso!")
+                            # Aqui você pode realizar outras ações após a aprovação
+                            self.atualizar_campos_cliente()
+                        else:
+                            QMessageBox.warning(self, "Erro", f"Erro ao passar orçamento {ordem_id}.")
+                    except Exception as e:
+                        QMessageBox.critical(self, "Erro", f"Erro ao passar orçamento {ordem_id}: {str(e)}")
+            else:
+                QMessageBox.warning(self, "Aviso", "Nenhuma data selecionada. alteração cancelada.")  
+
+    def negar_ordem(self):
+        # Criar um diálogo para selecionar a data
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Selecionar Data de Reprovação")
+        layout = QVBoxLayout()
+
+        # Adicionar um QDateEdit para escolher a data
+        
+        date_edit = QDateEdit()
+        date_edit.setDate(QDate.currentDate())  # Definir a data atual como a data inicial
+        date_edit.setCalendarPopup(True)
+        layout.addWidget(date_edit)
+
+
+        # Adicionar botões de OK e Cancelar
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, parent=dialog)
+        layout.addWidget(buttons)
+
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        dialog.setLayout(layout)
+
+        # Exibir o diálogo e obter a data selecionada
+        if dialog.exec_() == QDialog.Accepted:
+            data_aprovacao = date_edit.date().toString("dd/MM/yyyy")
+
+            # Continuar com o processo de aprovação apenas se o usuário selecionou uma data
+            if data_aprovacao:
+                ordem_id = self.ordem_info['Código']
+                resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja rejeitar o orçamento código {ordem_id}?", QMessageBox.Yes | QMessageBox.No)
+                if resposta == QMessageBox.Yes:
+                    verificar=self.controller_ordem.ValidarOrdemPassadaAoCliente(ordem_id)
+                    if verificar==True:
+                       
+                            try:
+                                # Aqui você deve salvar data_aprovacao no banco junto com o status de aprovação
+                                # Exemplo de como você poderia fazer isso:
+                                resultado = self.controller_ordem.NegarOrcamento(data_aprovacao, ordem_id)
+                                if resultado:
+                                    QMessageBox.information(self, "Sucesso", f"Orçamento {ordem_id} rejeitado com sucesso!")
+                                    # Aqui você pode realizar outras ações após a aprovação
+                                    self.atualizar_campos_cliente()
+                                else:
+                                    QMessageBox.warning(self, "Erro", f"Erro ao rejeitar orçamento {ordem_id}.")
+                            except Exception as e:
+                                QMessageBox.critical(self, "Erro", f"Erro ao rejeitar orçamento {ordem_id}: {str(e)}") 
+                    else:
+                         QMessageBox.warning(self, "Erro", f"Erro ao rejeitar orçamento {ordem_id}  não foi passado ao cliente.")       
+                else:
+                    QMessageBox.warning(self, "Aviso", "Nenhuma data selecionada. Rejeição cancelada.")
+     
+    def aprovar_ordem(self):
+        # Criar um diálogo para selecionar a data
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Selecionar Data de Aprovação")
+        layout = QVBoxLayout()
+
+        # Adicionar um QDateEdit para escolher a data
+        
+        date_edit = QDateEdit()
+        date_edit.setDate(QDate.currentDate())  # Definir a data atual como a data inicial
+        date_edit.setCalendarPopup(True)
+        layout.addWidget(date_edit)
+
+
+        # Adicionar botões de OK e Cancelar
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, parent=dialog)
+        layout.addWidget(buttons)
+
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+
+        dialog.setLayout(layout)
+
+        # Exibir o diálogo e obter a data selecionada
+        if dialog.exec_() == QDialog.Accepted:
+            data_aprovacao = date_edit.date().toString("dd/MM/yyyy")
+
+            # Continuar com o processo de aprovação apenas se o usuário selecionou uma data
+            if data_aprovacao:
+                ordem_id = self.ordem_info['Código']
+                resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja aprovar o orçamento código {ordem_id}?", QMessageBox.Yes | QMessageBox.No)
+                if resposta == QMessageBox.Yes:
+                    verificar=self.controller_ordem.ValidarOrdemPassadaAoCliente(ordem_id)
+                    if verificar==True:
+                       
+                            try:
+                                # Aqui você deve salvar data_aprovacao no banco junto com o status de aprovação
+                                # Exemplo de como você poderia fazer isso:
+                                resultado = self.controller_ordem.AprovarOrcamento(data_aprovacao, ordem_id)
+                                if resultado:
+                                    QMessageBox.information(self, "Sucesso", f"Orçamento {ordem_id} aprovado com sucesso!")
+                                    # Aqui você pode realizar outras ações após a aprovação
+                                    self.atualizar_campos_cliente()
+                                else:
+                                    QMessageBox.warning(self, "Erro", f"Erro ao aprovar orçamento {ordem_id}.")
+                            except Exception as e:
+                                QMessageBox.critical(self, "Erro", f"Erro ao aprovar orçamento {ordem_id}: {str(e)}")
+                    else:
+                         QMessageBox.warning(self, "Erro", f"Erro ao aprovar orçamento {ordem_id}  não foi passado ao cliente.")       
+                else:
+                    QMessageBox.warning(self, "Aviso", "Nenhuma data selecionada. Aprovação cancelada.")
+         
     def update_item_table(self):
         # Limpa a tabela de equipamentos
         self.item_table.setRowCount(0)
 
         # Define o número de linhas da tabela para corresponder ao número de equipamentos
         self.item_table.setRowCount(len(self.itens))
+        
         self.atualizar_campos_cliente()
         # Adiciona os equipamentos atualizados à tabela
         for row, equip in enumerate(self.itens):
@@ -1259,6 +1414,6 @@ class AdicionarEditarItemDialog(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    ui = OrdemDeServicoUI()  
+    ui = OrcamentoUI()  
     ui.show()
     sys.exit(app.exec_())

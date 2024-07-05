@@ -1,0 +1,14 @@
+
+Caso haja algum chamado futuro de problema futuro de gravação de audiências no teams, segue alguns testes que são solicitados pela STI 4.2.1:
+1) Print do chat da reunião onde aparece a gravação mostrando uma duração  
+2) Print da reprodução da gravação mostrando que o tempo de duração de cada uma das audiências.  
+3) Data da reunião:  
+4) Organizador da reunião: nome@tjsp.jus.br  
+5) Nome de quem iniciou a gravação: nome@tjsp.jus.br  
+6) Link da reunião:  
+7) Logs do TEAMS (obtidos pressionando-se CTRL+ALT+SHIFT+1 e coletando-os na pasta Downloads do Windows)  
+8) Logs de media do TEAMS, que podem ser encontrados nos caminhos a seguir:  
+Windows  
+%appdata%\Microsoft\Teams\media-stack\*.blog  
+%appdata%\Microsoft\Teams\skylib\*.blog  
+%appdata%\Microsoft\Teams\media-stack\*.etl  
