@@ -362,18 +362,18 @@ class OrcamentoUI(QWidget):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir a ordem de serviço ID {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja excluir o Orçamento ID {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 self.controller.DeletarOrdemServico(id)
                 self.filter_active()
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma ordem de serviço para excluir.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para excluir.")
 
     def inactive_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja inativar o Orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServico(id)
                 if resultado:
@@ -382,17 +382,17 @@ class OrcamentoUI(QWidget):
                         self.controller.InativarOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está inativa.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento  já está inativo.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para inativar.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para inativar.")
  
     def ative_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reativar o Orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServico(id)
                 if resultado:
@@ -401,17 +401,17 @@ class OrcamentoUI(QWidget):
                         self.controller.AtivarOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está Ativa.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está Ativo.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço de serviço para Ativar.")   
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento  para Ativar.")   
     
     def fechar_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja fechar a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja fechar o orçamento código {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServicoFechada(id)
                 if resultado:
@@ -421,17 +421,17 @@ class OrcamentoUI(QWidget):
                         self.controller.FecharOrdemServico(data_final,id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está fechada.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está fechado.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrado.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para fechar.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para fechar.")
 
     def abrir_ordem(self):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id = self.ordem_table.item(selected_row, 0).text()
-            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reabrir a ordem de serviço código {id}?", QMessageBox.Yes | QMessageBox.No)
+            resposta = QMessageBox.question(self, "Confirmação", f"Tem certeza que deseja reabrir  o Orçamento {id}?", QMessageBox.Yes | QMessageBox.No)
             if resposta == QMessageBox.Yes:
                 resultado = self.controller.ValidarOrdemServicoFechada(id)
                 if resultado:
@@ -440,11 +440,11 @@ class OrcamentoUI(QWidget):
                         self.controller.AbrirOrdemServico(id)
                         self.filter_active()
                     else:
-                        QMessageBox.warning(self, "Aviso", "Ordem de serviço já está aberta.")
+                        QMessageBox.warning(self, "Aviso", "Orçamento já está aberta.")
                 else:
-                    QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
+                    QMessageBox.warning(self, "Aviso", "Orçamento não encontrada.")
         else:
-            QMessageBox.warning(self, "Aviso", "Selecione uma Ordem de serviço para reabrir.")
+            QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para reabrir.")
 
     def show_add_ordem_dialog(self):
         clientes_disponiveis = self.controller_cliente.BuscarCliente()
