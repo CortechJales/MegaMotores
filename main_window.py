@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Sistema de Gerenciamento")
-        self.setGeometry(100, 100, 1200, 900)
+        self.setGeometry(100, 100, 1000, 700)
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
         pasta_imagens = os.path.join(diretorio_atual, 'img')
         caminho_imagem = os.path.join(pasta_imagens, 'megamotores.png')
