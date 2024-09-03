@@ -451,7 +451,7 @@ class OrcamentoUI(QWidget):
         dialog = AdicionarEditarOrdemDialog(clientes_disponiveis=clientes_disponiveis)
         if dialog.exec_():
             
-            cliente = dialog.combo_cliente.currentText().split(' - ')[0]
+            cliente = dialog.line_cliente.text().split(' - ')[0]
             observacao = dialog.observacao.text()
             equipamento = dialog.combo_equipamento.currentText().split(' - ')[0]
             data_inicio = dialog.data_inicio_edit.text()
@@ -463,10 +463,10 @@ class OrcamentoUI(QWidget):
         selected_row = self.ordem_table.currentRow()
         if selected_row != -1:
             id_ordem = int(self.ordem_table.item(selected_row, 0).text())
-        
-        # Método para buscar os dados da ordem pelo ID
+            
+            # Método para buscar os dados da ordem pelo ID
             ordens = self.controller.CarregarOrdemServico(id_ordem)
-        
+            
             if ordens:
                 ordem = ordens[0]  # Supondo que a função retorna uma lista de tuplas, pegamos o primeiro elemento
                 cliente = ordem[1]  # Índice do cliente na tupla
@@ -476,18 +476,23 @@ class OrcamentoUI(QWidget):
                 observacao = ordem[6]
             
                 clientes_disponiveis = self.controller_cliente.BuscarCliente()
-                
-                print(f"cliente que chegou antes de editar: {cliente}")
                 equipamentos_disponiveis = self.controller_equipamento.BuscarEquipamentos()
-                dialog = AdicionarEditarOrdemDialog(cliente, observacao, equipamento, data_inicio, mao_de_obra,clientes_disponiveis, equipamentos_disponiveis)
+                
+              
+                
+                dialog = AdicionarEditarOrdemDialog(cliente, observacao, equipamento, data_inicio, mao_de_obra, clientes_disponiveis, equipamentos_disponiveis)
+                
+                # Atualiza a lista de equipamentos com base no cliente selecionado
+                dialog.update_equipamentos()
+                
                 if dialog.exec_():
-                    novo_cliente = dialog.combo_cliente.currentText().split(' - ')[0]
+                    novo_cliente = dialog.line_cliente.text().split(' - ')[0]
                     novo_observacao = dialog.observacao.text()
                     novo_equipamento = dialog.combo_equipamento.currentText().split(' - ')[0]
                     novo_inicio = dialog.data_inicio_edit.text()
                     novo_mao = dialog.mao_de_obra.text()
                 
-                    self.edit_ordem(novo_cliente,novo_observacao, novo_equipamento, novo_inicio, novo_mao, id_ordem)
+                    self.edit_ordem(novo_cliente, novo_observacao, novo_equipamento, novo_inicio, novo_mao, id_ordem)
             else:
                 QMessageBox.warning(self, "Aviso", "Ordem de serviço não encontrada.")
         else:
@@ -545,69 +550,63 @@ class OrcamentoUI(QWidget):
 
 
 class AdicionarEditarOrdemDialog(QDialog):
-    def __init__(self, cliente_id="",observacao="", equipamento_id="", data_inicio="", mao_de_obra="",clientes_disponiveis=None,equipamentos_disponiveis=None):
+    def __init__(self, cliente_id="", observacao="", equipamento_id="", data_inicio="", mao_de_obra="", clientes_disponiveis=None, equipamentos_disponiveis=None):
         super().__init__()
-       
+
         self.setWindowTitle("Adicionar Orçamento")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
-        # Subindo um nível para acessar a pasta img
         pasta_img = os.path.join(diretorio_atual, '..', 'img')
-        # Path para a imagem específica
         caminho_imagem = os.path.join(pasta_img, 'megamotores.png')
-        self.setWindowIcon(QIcon(caminho_imagem))  # Adicione o ícone desejado
-        self.cliente_id=cliente_id
-        self.equipamento_id=equipamento_id
-        
-        print(f"cliente que chegou na tela de editar: {cliente_id}")
-        
-        print(f"equipamento que chegou na tela de editar: {equipamento_id}")
+        self.setWindowIcon(QIcon(caminho_imagem))
+        self.cliente_id = cliente_id
+        self.equipamento_id = equipamento_id
+
         self.controller_cliente = ClienteController()
-        
         self.controller_equipamento = EquipamentoClienteController()
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)  # Adicione margens para espaçamento
+        layout.setContentsMargins(10, 10, 10, 10)
 
         form_layout = QFormLayout()
 
-        self.combo_cliente = QComboBox()
+        self.line_cliente = QLineEdit()
+        self.line_cliente.setReadOnly(True)
+        self.btn_selecionar_cliente = QPushButton("Selecionar Cliente")
+        self.btn_selecionar_cliente.clicked.connect(self.open_cliente_selection_dialog)
+
         self.observacao = QLineEdit(str(observacao))
-        self.combo_equipamento =  QComboBox()
+        self.combo_equipamento = QComboBox()
         self.data_inicio_edit = QDateEdit()
         self.mao_de_obra = QDoubleSpinBox()
         self.mao_de_obra.setDecimals(2)
-        self.mao_de_obra.setMaximum(9999.99)    # Definindo duas casas decimais
+        self.mao_de_obra.setMaximum(9999.99)
         self.mao_de_obra.setPrefix("R$ ")
 
         if mao_de_obra:
-            # Substitui a vírgula pelo ponto e converte para float
-            self.mao_de_obra.setValue(mao_de_obra) 
-       
+            self.mao_de_obra.setValue(mao_de_obra)
 
-        # Configuração de QDateEdit para as datas de início e final
         self.data_inicio_edit.setCalendarPopup(True)
         self.data_inicio_edit.setDate(QDate.fromString(data_inicio, "dd/MM/yyyy"))
-        
 
-        # Estilo CSS para os campos de entrada
         style_sheet = """
-            QLineEdit, QComboBox, QDateEdit,QDoubleSpinBox{
+            QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox {
                 border: 2px solid #3498db;
                 border-radius: 10px;
                 padding: 8px;
                 font-size: 14px;
             }
-            QLineEdit:focus, QComboBox:focus QDateEdit:focus,QDoubleSpinBox:focus{
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QDoubleSpinBox:focus {
                 border-color: #e74c3c;
             }
         """
-        self.combo_cliente.setStyleSheet(style_sheet)
+        self.line_cliente.setStyleSheet(style_sheet)
         self.observacao.setStyleSheet(style_sheet)
         self.combo_equipamento.setStyleSheet(style_sheet)
         self.data_inicio_edit.setStyleSheet(style_sheet)
         self.mao_de_obra.setStyleSheet(style_sheet)
-        
-        form_layout.addRow(QLabel("Cliente:"), self.combo_cliente)
+
+        form_layout.addRow(QLabel("Cliente:"), self.line_cliente)
+        form_layout.addWidget(self.btn_selecionar_cliente)
         form_layout.addRow(QLabel("Observação:"), self.observacao)
         form_layout.addRow(QLabel("Equipamento:"), self.combo_equipamento)
         form_layout.addRow(QLabel("Data Início:"), self.data_inicio_edit)
@@ -628,82 +627,141 @@ class AdicionarEditarOrdemDialog(QDialog):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
-        
-        if data_inicio=="":
+
+        if data_inicio == "":
             self.data_inicio_edit.setDate(QDate.currentDate())
 
         if clientes_disponiveis:
-            self.combo_cliente.addItem("Selecione um Cliente")
             for cliente in clientes_disponiveis:
-                self.combo_cliente.addItem(f"{cliente[0]} - {cliente[1]}")
-            # Se o ID do cliente estiver definido, encontre seu índice na lista e selecione-o
-            if cliente_id:
-                cliente_ids = [cliente[0] for cliente in clientes_disponiveis]
-                if cliente_id in cliente_ids:
-                    cliente_index = cliente_ids.index(cliente_id)
-                    
-                    print(f"cliente index : {cliente_index}")
-                    self.combo_cliente.setCurrentIndex(cliente_index+1)
-                else:
-                    # Caso o ID do cliente não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
-                    self.combo_cliente.setCurrentIndex(0)
-     
-                    
-        else:
-            clientes_disponiveis = self.controller_cliente.BuscarCliente()
+                if cliente[0] == cliente_id:
+                    self.line_cliente.setText(f"{cliente[0]} - {cliente[1]}")
+                    break
 
         if equipamentos_disponiveis:
             self.combo_equipamento.addItem("Selecione um Equipamento")
             for equipamento in equipamentos_disponiveis:
                 self.combo_equipamento.addItem(f"{equipamento[0]} - {equipamento[1]}")
-            # Se o ID do equipamento estiver definido, encontre seu índice na lista e selecione-o
             if equipamento_id:
                 equipamento_ids = [equipamento[0] for equipamento in equipamentos_disponiveis]
                 if equipamento_id in equipamento_ids:
                     equipamento_index = equipamento_ids.index(equipamento_id)
-                    
-                    print(f"equipamento index : {equipamento_index}")
-                    self.combo_equipamento.setCurrentIndex(equipamento_index+1)
+                    self.combo_equipamento.setCurrentIndex(equipamento_index + 1)
                 else:
-                    # Caso o ID do equipamento não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
-                    self.combo_equipamento.setCurrentIndex(0)      
+                    self.combo_equipamento.setCurrentIndex(0)
         else:
             equipamentos_disponiveis = self.controller_equipamento.BuscarEquipamentos()
 
-        self.combo_cliente.currentIndexChanged.connect(self.update_equipamentos)
+        self.setFixedSize(500, 300)
+
+    def open_cliente_selection_dialog(self):
+        dialog = ClienteSelectionDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            cliente_id, cliente_nome = dialog.get_selected_cliente()
+            self.line_cliente.setText(f"{cliente_id} - {cliente_nome}")
+            self.cliente_id = cliente_id
+            self.update_equipamentos()  # Atualiza os equipamentos com base no cliente selecionado
 
     def update_equipamentos(self):
-        cliente_info = self.combo_cliente.currentText()
-        cliente_id = cliente_info.split()[0]
+        cliente_info = self.line_cliente.text()
+        cliente_id = cliente_info.split()[0] if cliente_info else ""
 
         self.combo_equipamento.clear()
-        
         self.combo_equipamento.addItem("Selecione um equipamento")
-        # Consulta ao controller de equipamento para recuperar os equipamentos associados ao cliente selecionado
+
         if cliente_id:
             equipamentos = self.controller_equipamento.BuscarEquipamento(cliente_id)
             for equipamento in equipamentos:
                 self.combo_equipamento.addItem(f"{equipamento[0]} - {equipamento[1]}")
-        
+            
+            # Defina o equipamento atual, se houver
+            if self.equipamento_id:
+                equipamento_id_str = str(self.equipamento_id)  # Garanta que o ID seja uma string
+                # Encontre o índice do equipamento atual na lista
+                for index in range(self.combo_equipamento.count()):
+                    item_text = self.combo_equipamento.itemText(index)
+                    if item_text.startswith(equipamento_id_str):
+                        self.combo_equipamento.setCurrentIndex(index)
+                        break
+        else:
+            # Se não há cliente selecionado, carregue todos os equipamentos ou mantenha vazio
+            self.combo_equipamento.addItem("Nenhum equipamento disponível")
+
+
+
     def on_save(self):
         if not self.validate_fields():
             return
-
         self.accept()
 
     def validate_fields(self):
-        # Verificar se todos os campos estão preenchidos
-        if not all([ self.data_inicio_edit.date(), self.mao_de_obra.text()]):
+        if not all([self.data_inicio_edit.date(), self.mao_de_obra.text()]):
             QMessageBox.warning(self, "Erro", "Todos os campos devem ser preenchidos.")
             return False
-
         return True
-    
+
     def has_two_decimal_places(self, number):
-    # Converte o número para uma string e verifica se tem duas casas decimais
         decimal_part = str(number).split('.')[1]
         return len(decimal_part) <= 2
     
+class ClienteSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Selecionar Cliente")
+        self.selected_cliente_id = None
+        self.selected_cliente_nome = None
+
+        layout = QVBoxLayout()
+
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Filtrar por nome:"))
+        self.filter_input = QLineEdit()
+        self.filter_input.textChanged.connect(self.filter_table)
+        filter_layout.addWidget(self.filter_input)
+
+        self.btn_select = QPushButton("Selecionar")
+        self.btn_select.clicked.connect(self.select_cliente)
+
+        filter_layout.addWidget(self.btn_select)
+        layout.addLayout(filter_layout)
+
+        self.cliente_table = QTableWidget()
+        self.cliente_table.setColumnCount(2)
+        self.cliente_table.setHorizontalHeaderLabels(['ID', 'Nome'])
+        self.cliente_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.cliente_table)
+
+        self.setLayout(layout)
+        self.load_clientes()
+
+        self.setFixedSize(600, 400)
+
+    def load_clientes(self):
+        clientes = self.parent().controller_cliente.BuscarCliente()
+        print(clientes)  # Adicione esta linha para depuração
+        self.cliente_table.setRowCount(len(clientes))
+        for row, cliente in enumerate(clientes):
+            self.cliente_table.setItem(row, 0, QTableWidgetItem(str(cliente[0])))  # Certifique-se de converter para string
+            self.cliente_table.setItem(row, 1, QTableWidgetItem(cliente[1]))
+
+    def filter_table(self):
+        filter_text = self.filter_input.text().lower()
+        for row in range(self.cliente_table.rowCount()):
+            item = self.cliente_table.item(row, 1)  # Nome do cliente
+            if item is not None:
+                self.cliente_table.setRowHidden(row, filter_text not in item.text().lower())
+            else:
+                self.cliente_table.setRowHidden(row, True)
+
+    def select_cliente(self):
+        selected_row = self.cliente_table.currentRow()
+        if selected_row >= 0:
+            self.selected_cliente_id = self.cliente_table.item(selected_row, 0).text()
+            self.selected_cliente_nome = self.cliente_table.item(selected_row, 1).text()
+            self.accept()
+
+    def get_selected_cliente(self):
+        return self.selected_cliente_id, self.selected_cliente_nome
+
 class DetalhesOrdemDialog(QDialog):
     def __init__(self, ordem_info, itens_ordem, user_type):
         super().__init__()

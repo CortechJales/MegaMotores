@@ -93,4 +93,9 @@ INNER JOIN marca AS m ON equipamento_cliente.marca_id = m.id
 WHERE equipamento_cliente.id=?'''
         data = (id,)
         return self.db.execute_query(query, data)
-        
+    
+    def BuscarEquipamento(self, cliente_id):
+        query = "SELECT id, modelo FROM equipamento_cliente WHERE cliente_id = ?"
+        data = (cliente_id,)
+        return self.db.execute_query(query, data)
+    
