@@ -1161,7 +1161,7 @@ class DetalhesOrdemDialog(QDialog):
         dialog = AdicionarEditarItemDialog(produtos_disponiveis=produtos_disponiveis)
        
         if dialog.exec_():
-            produto_id = dialog.combo_produto.currentText().split(' - ')[0]
+            produto_id = dialog.line_produto.text().split(' - ')[0]
             
             quantidade = dialog.quantidade.text()
             
@@ -1193,7 +1193,7 @@ class DetalhesOrdemDialog(QDialog):
             # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
             dialog = AdicionarEditarItemDialog(produto, quantidade,valor_unitario,produtos_disponiveis)
             if dialog.exec_(): 
-                novo_produto_id= dialog.combo_produto.currentText().split(' - ')[0]
+                novo_produto_id= dialog.line_produto.text().split(' - ')[0]
                 novo_quantidade = dialog.quantidade.text()
                 novo_valor = dialog.valor_unitario.text()
                 
@@ -1237,7 +1237,10 @@ class AdicionarEditarItemDialog(QDialog):
             }
         """
         
-        self.combo_produto = QComboBox()
+        self.line_produto = QLineEdit()
+        self.line_produto.setReadOnly(True)
+        self.btn_selecionar_produto = QPushButton("Selecionar Produto")
+        self.btn_selecionar_produto.clicked.connect(self.open_produto_selection_dialog)
         self.quantidade = QLineEdit(str(quantidade))
         
         self.editar_valor = QRadioButton("Sim")
@@ -1256,11 +1259,12 @@ class AdicionarEditarItemDialog(QDialog):
             valor_float = float(str(valor_unitario).replace(',', '.'))
             self.valor_unitario.setValue(valor_float)
 
-        self.combo_produto.setStyleSheet(style_sheet)
+        self.line_produto.setStyleSheet(style_sheet)
         self.quantidade.setStyleSheet(style_sheet)
         self.valor_unitario.setStyleSheet(style_sheet)
 
-        form_layout.addRow(QLabel("Produto:"), self.combo_produto)
+        form_layout.addRow(QLabel("Produto:"), self.line_produto)
+        form_layout.addWidget(self.btn_selecionar_produto)
         form_layout.addRow(QLabel("Quantidade:"), self.quantidade)
         form_layout.addRow(QLabel("Editar Valor Manualmente:"), self.editar_valor)
         form_layout.addRow(QLabel("Valor unitário:"), self.valor_unitario)  # Adiciona o campo de valor unitário ao formulário
@@ -1280,44 +1284,107 @@ class AdicionarEditarItemDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
         
+        self.setFixedSize(600, 400)
         if produtos_disponiveis:
             for produto in produtos_disponiveis:
-                self.combo_produto.addItem(f"{produto[0]} - {produto[1]}", produto[0])  # Adiciona o ID do produto como dado ao item do combo box
-
-            if self.produto_id and produtos_disponiveis:
-                produto_ids = [produto[0] for produto in produtos_disponiveis]
-                if self.produto_id in produto_ids:
-                    produto_index = produto_ids.index(self.produto_id)
-                    self.combo_produto.setCurrentIndex(produto_index)
-                else:
-                    self.combo_produto.setCurrentIndex(0)
-        else:
-            produtos_disponiveis = self.controller.FiltrarProduto(True)
+                if produto[0] == produto_id:
+                    self.line_produto.setText(f"{produto[0]} - {produto[1]}")
+                    break
 
         # Conecta a função atualizar_valor_unitario tanto à mudança no produto quanto à mudança no campo de valor
-        self.combo_produto.currentIndexChanged.connect(self.atualizar_valor_unitario)
+       
+        self.line_produto.textChanged.connect(self.atualizar_valor_unitario)
         self.valor_unitario.textChanged.connect(self.atualizar_valor_manual)
 
+    def open_produto_selection_dialog(self):
+        dialog = MaterialSelectionDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            cliente_id, cliente_nome = dialog.get_selected_cliente()
+            self.line_produto.setText(f"{cliente_id} - {cliente_nome}")
+            self.cliente_id = cliente_id  # Atualiza os equipamentos com base no cliente selecionado
+    
     def atualizar_valor_unitario(self):
-        # Obtém o ID do produto selecionado
-        produto_id = self.combo_produto.currentData()
-        # Consulta o valor do produto usando o ID
-        valor_produto = self.controller.obter_valor_produto(produto_id)
-        # Atualiza o campo de valor unitário na tela
-        self.valor_unitario.setValue(valor_produto)
+        # Obtém o texto do QLineEdit
+        texto = self.line_produto.text()
+        
+        # Supondo que o ID e o nome do produto estejam separados por ' - '
+        if ' - ' in texto:
+            produto_id = texto.split(' - ')[0]
+            # Consulta o valor do produto usando o ID
+            valor_produto = self.controller.obter_valor_produto(produto_id)
+            # Atualiza o campo de valor unitário na tela
+            self.valor_unitario.setValue(valor_produto)
 
     def atualizar_valor_manual(self):
-    # Verifica se o campo de valor unitário não está vazio
+        # Verifica se o campo de valor unitário não está vazio
         if self.valor_unitario.text():
             # Obtém o valor manualmente digitado pelo usuário
             valor_manual = self.valor_unitario.text().replace(',', '.')  # Substitui a vírgula por um ponto
             # Atualiza o campo de valor unitário com o valor digitado
             self.valor_unitario.setValue(float(valor_manual))
-
     def toggle_valor_editavel(self):
         # Alterna entre o modo somente leitura e editável do campo de valor unitário
         self.valor_unitario.setReadOnly(not self.valor_unitario.isReadOnly())
 
+class MaterialSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Selecionar Produto")
+        self.selected_produto_id = None
+        self.selected_produto_nome = None
+
+        layout = QVBoxLayout()
+
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Filtrar por nome:"))
+        self.filter_input = QLineEdit()
+        self.filter_input.textChanged.connect(self.filter_table)
+        filter_layout.addWidget(self.filter_input)
+
+        self.btn_select = QPushButton("Selecionar")
+        self.btn_select.clicked.connect(self.select_cliente)
+
+        filter_layout.addWidget(self.btn_select)
+        layout.addLayout(filter_layout)
+
+        self.produto_table = QTableWidget()
+        self.produto_table.setColumnCount(3)
+        self.produto_table.setHorizontalHeaderLabels(['ID', 'Nome','Valor'])
+        self.produto_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.produto_table)
+
+        self.setLayout(layout)
+        self.load_produtos()
+
+        self.setFixedSize(600, 400)
+
+    def load_produtos(self):
+        produtos = self.parent().controller.FiltrarProduto(True)
+        print(produtos)  # Adicione esta linha para depuração
+        self.produto_table.setRowCount(len(produtos))
+        for row, cliente in enumerate(produtos):
+            self.produto_table.setItem(row, 0, QTableWidgetItem(str(cliente[0])))  # Certifique-se de converter para string
+            self.produto_table.setItem(row, 1, QTableWidgetItem(cliente[1]))
+            self.produto_table.setItem(row, 2, QTableWidgetItem(cliente[2]))
+
+    def filter_table(self):
+        filter_text = self.filter_input.text().lower()
+        for row in range(self.produto_table.rowCount()):
+            item = self.produto_table.item(row, 1)  # Nome do cliente
+            if item is not None:
+                self.produto_table.setRowHidden(row, filter_text not in item.text().lower())
+            else:
+                self.produto_table.setRowHidden(row, True)
+
+    def select_cliente(self):
+        selected_row = self.produto_table.currentRow()
+        if selected_row >= 0:
+            self.selected_cliente_id = self.produto_table.item(selected_row, 0).text()
+            self.selected_cliente_nome = self.produto_table.item(selected_row, 1).text()
+            self.accept()
+
+    def get_selected_cliente(self):
+        return self.selected_cliente_id, self.selected_cliente_nome
 
 if __name__ == "__main__":
     import sys
