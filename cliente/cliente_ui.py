@@ -91,8 +91,8 @@ class ClienteUI(QWidget):
                 color: black;
             }
         """)
-        self.client_table.setColumnCount(10)
-        self.client_table.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço','Número', 'Cidade','Estado', 'CPF/CNPJ', 'Telefone','Ativo'])
+        self.client_table.setColumnCount(11)
+        self.client_table.setHorizontalHeaderLabels(['Código', 'Nome', 'CEP', 'Endereço','Número', 'Cidade','Estado', 'CPF/CNPJ', 'Telefone','Telefone 2','Ativo'])
         self.client_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.client_table)
 
@@ -184,7 +184,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 9:  # Coluna 'Ativo'
+                if column_number == 10:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -207,7 +207,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 9:  # Coluna 'Ativo'
+                if column_number == 10:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -230,7 +230,7 @@ class ClienteUI(QWidget):
             for column_number, data in enumerate(cliente):
                 item = QTableWidgetItem(str(data))
             
-                if column_number == 9:  # Coluna 'Ativo'
+                if column_number == 10:  # Coluna 'Ativo'
                     checkbox = QCheckBox()
                     checkbox.setChecked(bool(data))
                     checkbox.setEnabled(False)
@@ -243,12 +243,12 @@ class ClienteUI(QWidget):
                 else:
                     self.client_table.setItem(row_number, column_number, item)
 
-    def add_cliente(self, nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone):
-        self.controller.CadastrarCliente( nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone)
+    def add_cliente(self, nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone,telefone2):
+        self.controller.CadastrarCliente( nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone,telefone2)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
-    def edit_cliente(self, nome, cep, endereco, numero,cidade, estado, cpf_cnpj, telefone, id):
-        self.controller.EditarCliente( nome, cep, endereco,numero, cidade, estado, cpf_cnpj, telefone,id)
+    def edit_cliente(self, nome, cep, endereco, numero,cidade, estado, cpf_cnpj, telefone,telefone2, id):
+        self.controller.EditarCliente( nome, cep, endereco,numero, cidade, estado, cpf_cnpj, telefone,telefone2,id)
         self.filter_active()  # Atualizar a tabela após adicionar clientes
 
 
@@ -313,7 +313,8 @@ class ClienteUI(QWidget):
             estado = dialog.estado.currentText()
             cpf_cnpj = dialog.cpf_cnpj.text()
             telefone = dialog.telefone.text()
-            self.add_cliente(nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone)
+            telefone2 = dialog.telefone2.text()
+            self.add_cliente(nome, cep, endereco, numero, cidade, estado, cpf_cnpj, telefone,telefone2)
    
     def show_edit_cliente_dialog(self):
         selected_row = self.client_table.currentRow()
@@ -327,7 +328,8 @@ class ClienteUI(QWidget):
             estado = self.client_table.item(selected_row, 6).text()
             cpf_cnpj = self.client_table.item(selected_row, 7).text()            
             telefone = self.client_table.item(selected_row, 8).text()
-            dialog = AdicionarEditarClienteDialog(nome, cep, endereco,numero, cidade, estado, cpf_cnpj,telefone)
+            telefone2 = self.client_table.item(selected_row, 9).text()
+            dialog = AdicionarEditarClienteDialog(nome, cep, endereco,numero, cidade, estado, cpf_cnpj,telefone,telefone2)
             if dialog.exec_():
                 novo_nome = dialog.nome.text()
                 novo_cep = dialog.cep.text()
@@ -337,7 +339,8 @@ class ClienteUI(QWidget):
                 novo_estado = dialog.estado.currentText()
                 novo_cpf_cnpj = dialog.cpf_cnpj.text()
                 novo_telefone = dialog.telefone.text()
-                self.edit_cliente(novo_nome, novo_cep, novo_endereco,novo_numero, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone,id)
+                novo_telefone2 = dialog.telefone2.text()
+                self.edit_cliente(novo_nome, novo_cep, novo_endereco,novo_numero, novo_cidade, novo_estado, novo_cpf_cnpj, novo_telefone,novo_telefone2,id)
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um cliente para editar.")
 
@@ -354,7 +357,8 @@ class ClienteUI(QWidget):
             'Cidade': self.client_table.item(selected_row, 5).text(),
             'Estado': self.client_table.item(selected_row, 6).text(),
             'Cpf_cnpj': self.client_table.item(selected_row, 7).text(),
-            'Telefone': self.client_table.item(selected_row, 8).text()
+            'Telefone': self.client_table.item(selected_row, 8).text(),
+            'Telefone 2': self.client_table.item(selected_row, 9).text()
         }
             cliente_id = self.client_table.item(selected_row, 0).text()  
             equipamentos = self.controller_equipamento.ListarEquipamentoCliente(cliente_id)
@@ -374,7 +378,7 @@ class ClienteUI(QWidget):
 
 
 class AdicionarEditarClienteDialog(QDialog):
-    def __init__(self, nome="", cep="", endereco="", numero="", cidade="", estado="", cpf_cnpj="", telefone=""):
+    def __init__(self, nome="", cep="", endereco="", numero="", cidade="", estado="", cpf_cnpj="", telefone="", telefone2=""):
         super().__init__()
         self.setWindowTitle("Adicionar Cliente")
         diretorio_atual = os.path.dirname(os.path.abspath(__file__))
@@ -397,6 +401,7 @@ class AdicionarEditarClienteDialog(QDialog):
         self.estado = QComboBox()
         self.cpf_cnpj = QLineEdit(cpf_cnpj)
         self.telefone = QLineEdit(telefone)
+        self.telefone2 = QLineEdit(telefone2)
 
         # Estilo CSS para os campos de entrada
         style_sheet = """
@@ -418,6 +423,7 @@ class AdicionarEditarClienteDialog(QDialog):
         self.estado.setStyleSheet(style_sheet)
         self.cpf_cnpj.setStyleSheet(style_sheet)
         self.telefone.setStyleSheet(style_sheet)
+        self.telefone2.setStyleSheet(style_sheet)
 
         # Adicionando siglas dos estados ao QComboBox
         estados_brasileiros = [
@@ -453,7 +459,40 @@ class AdicionarEditarClienteDialog(QDialog):
         form_layout.addRow(QLabel("Tipo de Pessoa:"), tipo_pessoa_layout)
 
         form_layout.addRow(QLabel("CPF/CNPJ:"), self.cpf_cnpj)
-        form_layout.addRow(QLabel("Telefone:"), self.telefone)
+
+        self.celular1 = QRadioButton("Celular")
+        self.fixo1 = QRadioButton("Fixo")
+        self.nao_informar_tel1 = QRadioButton("Não informar")
+        self.celular1.setChecked(True)  # Definindo Pessoa Física como padrão
+        self.tipo_celular = QButtonGroup()
+        self.tipo_celular.addButton(self.celular1)
+        self.tipo_celular.addButton(self.fixo1)
+        self.tipo_celular.addButton(self.nao_informar_tel1)
+        self.tipo_celular.buttonClicked.connect(self.update_telefone_mask1)
+        tipo_celular_layout = QHBoxLayout()
+        tipo_celular_layout.addWidget(self.celular1)
+        tipo_celular_layout.addWidget(self.fixo1);        
+        tipo_celular_layout.addWidget(self.nao_informar_tel1)
+        
+        form_layout.addRow(QLabel("Tipo de telefone:"), tipo_celular_layout)
+        form_layout.addRow(QLabel("Telefone 1:"), self.telefone)
+
+        self.celular2 = QRadioButton("Celular")
+        self.fixo2 = QRadioButton("Fixo")
+        self.nao_informar_tel2 = QRadioButton("Não informar")
+        self.celular2.setChecked(True)  # Definindo Pessoa Física como padrão
+        self.tipo_celular2 = QButtonGroup()
+        self.tipo_celular2.addButton(self.celular2)
+        self.tipo_celular2.addButton(self.fixo2)
+        self.tipo_celular2.addButton(self.nao_informar_tel2)
+        self.tipo_celular2.buttonClicked.connect(self.update_telefone_mask2)
+        tipo_celular_layout2 = QHBoxLayout()
+        tipo_celular_layout2.addWidget(self.celular2)
+        tipo_celular_layout2.addWidget(self.fixo2);        
+        tipo_celular_layout2.addWidget(self.nao_informar_tel2)
+        
+        form_layout.addRow(QLabel("Tipo de telefone:"), tipo_celular_layout2)
+        form_layout.addRow(QLabel("Telefone 2:"), self.telefone2)
 
         layout.addLayout(form_layout)
 
@@ -477,7 +516,9 @@ class AdicionarEditarClienteDialog(QDialog):
 
         # Aplicar máscara inicial ao CPF/CNPJ e telefone
         self.update_cpf_cnpj_mask()
-        self.telefone.setInputMask('(00)00000-0000;_')
+        self.update_telefone_mask1()
+        self.update_telefone_mask2()
+
         
         self.cep.setInputMask('00000-000;_')
 
@@ -571,7 +612,26 @@ class AdicionarEditarClienteDialog(QDialog):
                 self.cpf_cnpj.setInputMask('00.000.000/0000-00;_')
             else:
                 self.cpf_cnpj.setInputMask('')  
+    
+    def update_telefone_mask1(self):
+        if self.celular1.isChecked():
+            self.telefone.setInputMask('(00)00000-0000;_')
 
+        else:
+            if self.fixo1.isChecked():
+                self.telefone.setInputMask('(00)0000-0000;_')
+            else:
+                self.telefone.setInputMask('')  
+                 
+    def update_telefone_mask2(self):
+        if self.celular2.isChecked():
+            self.telefone2.setInputMask('(00)00000-0000;_')
+
+        else:
+            if self.fixo2.isChecked():
+                self.telefone2.setInputMask('(00)0000-0000;_')
+            else:
+                self.telefone2.setInputMask('')  
     def apply_initial_cpf_cnpj_mask(self, cpf_cnpj):
         cpf_cnpj = re.sub(r'\D', '', cpf_cnpj)
         if len(cpf_cnpj) == 11:
@@ -848,7 +908,7 @@ class DetalhesClienteDialog(QDialog):
             
             tensao = dialog.tensao.text()
             
-            marca_id = dialog.combo_marca.currentText().split(' - ')[0]
+            marca_id = dialog.line_marca.text().split(' - ')[0]
             
             potencia = dialog.potencia.text()
 
@@ -872,7 +932,7 @@ class DetalhesClienteDialog(QDialog):
 
             # Obtenha a lista de todas as marcas disponíveis
             marcas_disponiveis = self.controller_marca.BuscarMarca()
-
+            print(f"marca que chegou antes de editar: {marca_id}")
             # Chame o diálogo de edição de equipamento, passando a lista de marcas e o ID da marca do equipamento
             dialog = AdicionarEditarEquipamentoDialog(modelo, rpm, polos, fases, tensao, marca_id,potencia, defeito, marcas_disponiveis)
             if dialog.exec_():
@@ -881,7 +941,7 @@ class DetalhesClienteDialog(QDialog):
                 novo_polos = dialog.polos.text()
                 novo_fases = dialog.fases.text()
                 novo_tensao = dialog.tensao.text()
-                novo_marca_id = dialog.combo_marca.currentText().split(' - ')[0]
+                novo_marca_id = dialog.line_marca.text().split(' - ')[0]
                 novo_potencia = dialog.potencia.text()
                 novo_defeito = dialog.defeito.text()
             
@@ -911,7 +971,8 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         self.marca_id=marca_id
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
-
+        
+        print(f"marca que chegou no editor: {marca_id}")
         form_layout = QFormLayout()
 
         style_sheet = """
@@ -930,7 +991,10 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         self.polos = QLineEdit(polos)
         self.fases = QLineEdit(fases)
         self.tensao = QLineEdit(tensao) 
-        self.combo_marca = QComboBox()
+        self.line_marca = QLineEdit()
+        self.line_marca.setReadOnly(True)
+        self.btn_selecionar_marca = QPushButton("Selecionar Produto")
+        self.btn_selecionar_marca.clicked.connect(self.open_marca_selection_dialog)
         self.potencia = QLineEdit(potencia)
         self.defeito = QLineEdit(defeito)
         
@@ -939,7 +1003,7 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         self.polos.setStyleSheet(style_sheet)
         self.fases.setStyleSheet(style_sheet)
         self.tensao.setStyleSheet(style_sheet)
-        self.combo_marca.setStyleSheet(style_sheet)
+        self.line_marca.setStyleSheet(style_sheet)
         self.potencia.setStyleSheet(style_sheet)
         self.defeito.setStyleSheet(style_sheet)
 
@@ -948,7 +1012,8 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         form_layout.addRow(QLabel("Polos:"), self.polos)
         form_layout.addRow(QLabel("Fases:"), self.fases)
         form_layout.addRow(QLabel("Tensão:"), self.tensao)
-        form_layout.addRow(QLabel("Marca:"), self.combo_marca) 
+        form_layout.addRow(QLabel("Marca:"), self.line_marca)
+        form_layout.addWidget(self.btn_selecionar_marca) 
         form_layout.addRow(QLabel("Potência:"), self.potencia)
         form_layout.addRow(QLabel("Defeito:"), self.defeito)
         
@@ -963,26 +1028,81 @@ class AdicionarEditarEquipamentoDialog(QDialog):
         btn_cancelar.clicked.connect(self.reject)
         button_layout.addWidget(btn_salvar)
         button_layout.addWidget(btn_cancelar)
-        layout.addWidget(self.combo_marca)
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
         
         if marcas_disponiveis:
             for marca in marcas_disponiveis:
-                self.combo_marca.addItem(f"{marca[0]} - {marca[1]}")
-            # Se o ID da marca estiver definido, encontre seu índice na lista e selecione-o
-           
-            if self.marca_id and marcas_disponiveis:
-                marca_ids = [marca[0] for marca in marcas_disponiveis]
-                if self.marca_id in marca_ids:
-                    marca_index = marca_ids.index(self.marca_id)
-                    self.combo_marca.setCurrentIndex(marca_index)
-                else:
-                    # Caso o ID da marca não esteja na lista de IDs disponíveis, selecione o primeiro item da lista
-                    self.combo_marca.setCurrentIndex(0)
-        else:
-            marcas_disponiveis = self.controller.BuscarMarca()
+                
+                 if str(marca[0]) == str(marca_id):
+                    self.line_marca.setText(f"{marca[0]} - {marca[1]}")
+                    break
+    def open_marca_selection_dialog(self):
+        dialog = MarcaSelectionDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            marca_id, marca_nome = dialog.get_selected_cliente()
+            self.line_marca.setText(f"{marca_id} - {marca_nome}")
+            self.marca_id = marca_id  # Atualiza os equipamentos com base no cliente selecionado
+class MarcaSelectionDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Selecionar Marca")
+        self.selected_marca_id = None
+        self.selected_marca_nome = None
+
+        layout = QVBoxLayout()
+
+        filter_layout = QHBoxLayout()
+        filter_layout.addWidget(QLabel("Filtrar por nome:"))
+        self.filter_input = QLineEdit()
+        self.filter_input.textChanged.connect(self.filter_table)
+        filter_layout.addWidget(self.filter_input)
+
+        self.btn_select = QPushButton("Selecionar")
+        self.btn_select.clicked.connect(self.select_cliente)
+
+        filter_layout.addWidget(self.btn_select)
+        layout.addLayout(filter_layout)
+
+        self.produto_table = QTableWidget()
+        self.produto_table.setColumnCount(2)
+        self.produto_table.setHorizontalHeaderLabels(['ID', 'Nome'])
+        self.produto_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(self.produto_table)
+
+        self.setLayout(layout)
+        self.load_produtos()
+
+        self.setFixedSize(600, 400)
+
+    def load_produtos(self):
+        produtos = self.parent().controller.BuscarMarca()
+        print(produtos)  # Adicione esta linha para depuração
+        self.produto_table.setRowCount(len(produtos))
+        for row, cliente in enumerate(produtos):
+            self.produto_table.setItem(row, 0, QTableWidgetItem(str(cliente[0])))  # Certifique-se de converter para string
+            self.produto_table.setItem(row, 1, QTableWidgetItem(cliente[1]))
+
+    def filter_table(self):
+        filter_text = self.filter_input.text().lower()
+        for row in range(self.produto_table.rowCount()):
+            item = self.produto_table.item(row, 1)  # Nome do cliente
+            if item is not None:
+                self.produto_table.setRowHidden(row, filter_text not in item.text().lower())
+            else:
+                self.produto_table.setRowHidden(row, True)
+
+    def select_cliente(self):
+        selected_row = self.produto_table.currentRow()
+        if selected_row >= 0:
+            self.selected_marca_id = self.produto_table.item(selected_row, 0).text()
+            self.selected_marca_nome = self.produto_table.item(selected_row, 1).text()
+            self.accept()
+
+    def get_selected_cliente(self):
+        return self.selected_marca_id, self.selected_marca_nome
+    
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

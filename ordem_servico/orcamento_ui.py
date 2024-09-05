@@ -998,6 +998,7 @@ class DetalhesOrdemDialog(QDialog):
                 estado = cliente[6]
                 cpf_cnjp = cliente[7]
                 telefone = cliente[8]
+                telefone2 = cliente[9]
 
                 cliente_info = {
                     'Nome': nome,
@@ -1007,7 +1008,8 @@ class DetalhesOrdemDialog(QDialog):
                     'Cidade': cidade,
                     'Estado': estado,
                     'Cpf_cnpj': cpf_cnjp,
-                    'Telefone': telefone
+                    'Telefone': telefone,
+                    'Telefone2': telefone2
                 }
                 print(f"equipamento_id: {equipamento_id}")
                 equips = self.controller_equipamento.CarregarImpressaoEquipamento(equipamento_id)

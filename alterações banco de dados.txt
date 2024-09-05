@@ -11,3 +11,7 @@ ADD COLUMN orcamento_aprovado DATA;
 UPDATE ordens_servico
 SET orcamento = 0
 WHERE orcamento IS NULL OR orcamento <> 1;
+
+
+ALTER TABLE cliente
+ADD COLUMN telefone2 TEXT;
