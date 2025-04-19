@@ -14,7 +14,6 @@ class OrdemDeServicoController:
                       observacao TEXT,
                       fechada BOOLEAN,
                       ativo BOOLEAN,
-                      observacao TEXT,
                       orcamento BOOLEAN,
                       orcamento_passado	DATA,
                       orcamento_aprovado DATA,

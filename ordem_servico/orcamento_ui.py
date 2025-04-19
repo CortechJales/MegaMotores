@@ -95,7 +95,12 @@ class OrcamentoUI(QWidget):
             self.btn_inactive.setStyleSheet(filter_button_style)
             self.btn_inactive.clicked.connect(self.filter_fechado)
             filter_layout.addWidget(self.btn_inactive)
+        self.btn_print = QPushButton("Imprimir")
+        self.btn_print.setStyleSheet(filter_button_style)
+        self.btn_print.clicked.connect(self.print_order)
+        filter_layout.addWidget(self.btn_print)
         layout.addLayout(filter_layout)
+        
 
         self.ordem_table = QTableWidget()
         self.ordem_table.setStyleSheet("""
@@ -208,6 +213,7 @@ class OrcamentoUI(QWidget):
 
     def filter_table(self):
         filter_text = self.filter_input.text().lower()
+        visible_products = []
         for row in range(self.ordem_table.rowCount()):
             match = False
             for col in range(self.ordem_table.columnCount()):
@@ -216,7 +222,29 @@ class OrcamentoUI(QWidget):
                     match = True
                     break
             self.ordem_table.setRowHidden(row, not match)
-
+            if match:
+                # Adiciona o produto visível à lista
+                id = self.ordem_table.item(row, 0).text()
+                cliente = self.ordem_table.item(row, 1).text()
+                equipamento = self.ordem_table.item(row, 2).text()
+                data_inicio = self.ordem_table.item(row, 3).text()
+                data_final = self.ordem_table.item(row, 4).text()
+                mao_de_obra = self.ordem_table.item(row, 5).text()
+                valor_final = self.ordem_table.item(row, 6).text()
+                observacao = self.ordem_table.item(row, 7).text()
+                visible_products.append({
+                    'id': id,
+                    'cliente': cliente,
+                    'equipamento': equipamento,
+                    'data_inicio': data_inicio,
+                    'data_final': data_final,
+                    'mao_de_obra': mao_de_obra,
+                    'valor_final': valor_final,
+                    'observacao': observacao
+                    
+                })
+        return visible_products
+           
     def filter_all(self):
         ordens = self.controller.ListarTodasOrdemServico(True,True)
         self.ordem_table.setRowCount(0)
@@ -445,7 +473,57 @@ class OrcamentoUI(QWidget):
                     QMessageBox.warning(self, "Aviso", "Orçamento não encontrada.")
         else:
             QMessageBox.warning(self, "Aviso", "Selecione um Orçamento para reabrir.")
+    
+    def print_order(self):
+        
+        visible_products = self.filter_table()
+        
+        data_atual = datetime.now().strftime("%d/%m/%Y")
+        info = {
+                        'data': data_atual
+                    }
+ # Obter os itens da ordem de serviço
 
+                                        # Obter o diretório atual do script Python
+        diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+
+                    # Path para salvar o arquivo PDF temporário
+        pdf_path = os.path.join(diretorio_atual,'temp2.pdf')
+
+                    # Renderiza o template HTML com os dados fornecidos
+        template_path = os.path.join(diretorio_atual,'teste2.html')
+
+                    # Verifica se os arquivos existem nos caminhos especificados
+        if not os.path.exists(template_path):
+            print(f"Arquivo HTML não encontrado em: {template_path}")
+                        # Adicione aqui qualquer lógica de tratamento de erro, se necessário
+
+        html_content = self.render_template(template_path,  visible_products=visible_products, info=info)
+
+                    # Path para salvar o arquivo HTML temporário
+        html_temp_path = os.path.join(diretorio_atual,'temp_ordem.html')
+
+                    # Adicione a codificação UTF-8 ao abrir o arquivo HTML temporário para escrita
+        with open(html_temp_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+
+                    # Converte o HTML para PDF
+        configuration = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+        pdfkit.from_file(html_temp_path, pdf_path, configuration=configuration, options={'encoding': "UTF-8"})
+
+                                    
+        if os.path.exists(pdf_path):
+                            
+                subprocess.run(['cmd', '/c', 'start', '', '/WAIT', pdf_path], shell=True)  
+        else:
+
+            print("O arquivo PDF não foi encontrado.")
+
+    def render_template(self, template_path, **kwargs):
+        with open(template_path, 'r', encoding='utf-8') as f:  # Adicione a codificação UTF-8 ao abrir o arquivo HTML
+            template_string = f.read()
+        template = Template(template_string)
+        return template.render(**kwargs)
     def show_add_ordem_dialog(self):
         clientes_disponiveis = self.controller_cliente.BuscarCliente()
         dialog = AdicionarEditarOrdemDialog(clientes_disponiveis=clientes_disponiveis)
@@ -473,7 +551,7 @@ class OrcamentoUI(QWidget):
                 equipamento = ordem[2]  # Índice do equipamento na tupla
                 data_inicio = ordem[3]  # Índice da data de início na tupla
                 mao_de_obra = ordem[5]
-                observacao = ordem[6]
+                observacao = ordem[8]
             
                 clientes_disponiveis = self.controller_cliente.BuscarCliente()
                 equipamentos_disponiveis = self.controller_equipamento.BuscarEquipamentos()
