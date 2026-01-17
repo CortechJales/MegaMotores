@@ -135,6 +135,11 @@
         }
         #itens-ordem-info table {
             font-size: 14px; /* Ajuste o tamanho da fonte conforme necessário */
+        }  
+        .tipo_ordem{
+            margin-top: -50px;
+            text-align: center;
+            margin-bottom: 50px;
         }
     </style>
 </head>
@@ -154,13 +159,16 @@
                         <div class="retangulo">
                         <p style="margin-top: -20px;"><h3>DATA</h3></p>
                         <p style="margin-top: -10px;"><h2>{{ordem_info.Data_inicial}}</h2></p>
-                    </div></td>   
+                        </div></td>   
                     
                     
                 </tr>
                 
             </tbody>
         </table>
+    </div>
+    <div class="tipo_ordem">
+        <p><strong><H1>ORDEM DE SERVIÇO Nº {{ordem_info.Codigo}}</H1></strong> </p>
     </div>
     <fieldset id="cliente-info" style="margin-top: -40px;">
         <legend>Informações do Cliente</legend>

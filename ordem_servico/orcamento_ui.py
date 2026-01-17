@@ -1051,7 +1051,9 @@ class DetalhesOrdemDialog(QDialog):
             orcamento_passado = ord[9]
             orcamento_aprovado = ord[10]
 
+            
             ordem_info = {
+                    'Codigo': id_ordem,
                     'Data_inicial': data_inicio,
                     'Data_final': data_final,
                     'mao_de_obra': mao_de_obra,
